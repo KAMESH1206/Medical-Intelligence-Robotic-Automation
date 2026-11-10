@@ -1,6 +1,5 @@
-"use client";
+﻿"use client";
 
-export const instant = false;
 
 import React, { useState } from "react";
 import { useMiraStore } from "@/lib/store";
@@ -159,7 +158,7 @@ export default function DataQualityPage() {
               {validationIssues.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="text-center py-8 text-[#248A63] font-semibold">
-                    ✓ All records currently pass data quality rules!
+                    âœ“ All records currently pass data quality rules!
                   </td>
                 </tr>
               ) : (

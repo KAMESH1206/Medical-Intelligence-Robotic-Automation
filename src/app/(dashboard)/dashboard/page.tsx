@@ -1,6 +1,5 @@
-"use client";
+﻿"use client";
 
-export const instant = false;
 
 import React from "react";
 import { useMiraStore } from "@/lib/store";
@@ -329,7 +328,7 @@ export default function DashboardPage() {
                       {log.action.replace(/_/g, " ").toUpperCase()}
                     </div>
                     <div className="text-[#74778A] text-[11px]">
-                      By {log.userName} · {log.resourceType ? `${log.resourceType} (${log.resourceId || "id"})` : "System Action"}
+                      By {log.userName} Â· {log.resourceType ? `${log.resourceType} (${log.resourceId || "id"})` : "System Action"}
                     </div>
                   </div>
                 </div>

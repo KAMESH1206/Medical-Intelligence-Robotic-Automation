@@ -1,6 +1,5 @@
-"use client";
+﻿"use client";
 
-export const instant = false;
 
 import React, { useState } from "react";
 import { useMiraStore } from "@/lib/store";
@@ -19,8 +18,8 @@ import {
 
 export default function SettingsPage() {
   const { currentUser, setRole, resetDemoData } = useMiraStore();
-  const [anthropicKey, setAnthropicKey] = useState("sk-ant-••••••••••••••••");
-  const [openaiKey, setOpenaiKey] = useState("sk-proj-••••••••••••••••");
+  const [anthropicKey, setAnthropicKey] = useState("sk-ant-â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢");
+  const [openaiKey, setOpenaiKey] = useState("sk-proj-â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢");
   const [activeModel, setActiveModel] = useState("claude-3-haiku");
   const [saveSuccess, setSaveSuccess] = useState(false);
 

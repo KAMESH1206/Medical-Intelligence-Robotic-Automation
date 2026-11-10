@@ -1,6 +1,5 @@
-"use client";
+﻿"use client";
 
-export const instant = false;
 
 import React, { useState } from "react";
 import { useMiraStore } from "@/lib/store";
@@ -270,7 +269,7 @@ export default function DocumentsPage() {
                 onClick={() => setSelectedDoc(null)}
                 className="text-gray-400 hover:text-gray-600 font-bold text-lg"
               >
-                ✕
+                âœ•
               </button>
             </div>
 

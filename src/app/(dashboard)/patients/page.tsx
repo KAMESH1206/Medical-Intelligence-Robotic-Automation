@@ -1,6 +1,5 @@
-"use client";
+﻿"use client";
 
-export const instant = false;
 
 import React, { useState } from "react";
 import { useMiraStore } from "@/lib/store";
@@ -219,7 +218,7 @@ export default function PatientsPage() {
                       <div className="text-[11px] text-[#74778A]">{patient.email || <span className="text-rose-500 font-medium">Missing email</span>}</div>
                     </td>
                     <td>
-                      <div className="text-xs font-medium text-[#25283A]">{patient.preferredClinic || "—"}</div>
+                      <div className="text-xs font-medium text-[#25283A]">{patient.preferredClinic || "â€”"}</div>
                       <div className="text-[11px] text-[#74778A]">{patient.enquiryCategory || "General"}</div>
                     </td>
                     <td>
@@ -310,7 +309,7 @@ export default function PatientsPage() {
                 onClick={() => setSelectedPatient(null)}
                 className="text-gray-400 hover:text-gray-600 font-bold text-lg"
               >
-                ✕
+                âœ•
               </button>
             </div>
 
@@ -380,7 +379,7 @@ export default function PatientsPage() {
                 onClick={() => setIsAddModalOpen(false)}
                 className="text-gray-400 hover:text-gray-600 font-bold text-lg"
               >
-                ✕
+                âœ•
               </button>
             </div>
 

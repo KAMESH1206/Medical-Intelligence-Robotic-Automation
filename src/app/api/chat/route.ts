@@ -19,9 +19,56 @@ export async function POST(request: Request) {
     }
 
     const apiKey = process.env.ANTHROPIC_API_KEY;
-    const hasValidKey = apiKey && apiKey.trim() !== "" && !apiKey.includes("your_anthropic_api_key_here");
+    const hasAnthropicKey = apiKey && apiKey.trim() !== "" && !apiKey.includes("your_anthropic_api_key_here");
 
-    if (hasValidKey) {
+    const n1nKey = process.env.N1N_API_KEY || (process.env.OPENAI_API_KEY?.startsWith("n1n_") ? process.env.OPENAI_API_KEY : "");
+    const hasN1nKey = n1nKey && n1nKey.trim() !== "" && !n1nKey.includes("your_n1n_api_key_here");
+
+    // 1. First priority: n1n.ai unified gateway if configured
+    if (hasN1nKey) {
+      try {
+        const baseUrl = process.env.N1N_BASE_URL || "https://api.n1n.ai/v1";
+        const model = process.env.N1N_MODEL || "gpt-4o";
+
+        const res = await fetch(`${baseUrl.replace(/\/+$/, "")}/chat/completions`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${n1nKey.trim()}`,
+          },
+          body: JSON.stringify({
+            model,
+            messages: [
+              {
+                role: "system",
+                content: "You are MIRA Ops Administrative AI Assistant for Australian healthcare clinics. Provide helpful, compliant, professional administrative triage, workflow support, and communication drafting. Never provide medical diagnosis or prescribe medications.",
+              },
+              ...messages.map((m) => ({
+                role: m.role,
+                content: m.content,
+              })),
+            ],
+            temperature: 0.3,
+            max_tokens: 700,
+          }),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          const reply = data.choices?.[0]?.message?.content;
+          if (reply) {
+            return Response.json({ reply, provider: "n1n.ai", model });
+          }
+        } else {
+          console.warn("n1n.ai response not OK:", res.status, await res.text());
+        }
+      } catch (n1nErr) {
+        console.warn("n1n.ai call failed, trying secondary fallback:", n1nErr);
+      }
+    }
+
+    // 2. Second priority: Direct Anthropic Claude
+    if (hasAnthropicKey) {
       try {
         let practicesJson = "[]";
         try {

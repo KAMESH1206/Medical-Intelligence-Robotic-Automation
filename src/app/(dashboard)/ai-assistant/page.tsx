@@ -1,6 +1,5 @@
-"use client";
+﻿"use client";
 
-export const instant = false;
 
 import React, { useState } from "react";
 import { useMiraStore } from "@/lib/store";
@@ -51,7 +50,7 @@ export default function AIAssistantPage() {
 
 I can help summarize patient intake queues, draft polite administrative communications, explain data quality flags, and identify missing documentation.
 
-⚠️ Safety Notice: I do not provide medical diagnoses, treatment advice, or drug recommendations. For life-threatening emergencies, dial 000 immediately.`,
+âš ï¸ Safety Notice: I do not provide medical diagnoses, treatment advice, or drug recommendations. For life-threatening emergencies, dial 000 immediately.`,
     },
   ]);
   const [input, setInput] = useState("");
@@ -99,10 +98,10 @@ The enquiry contains potential medical emergency indicators.
 3. MIRA Ops Intelligence does not process emergency clinical triage automatically.`;
       } else if (prompt.toLowerCase().includes("daily operations") || prompt.toLowerCase().includes("briefing")) {
         reply = `DAILY OPERATIONS SUMMARY (${new Date().toLocaleDateString("en-AU")}):
-• Active Patient Enquiries: ${patients.length} records in queue.
-• Document Intelligence: ${documents.filter((d) => d.status === "completed").length} processed, ${documents.filter((d) => d.status === "needs_review").length} requiring human validation.
-• Data Quality: ${validationIssues.length} active validation flags.
-• Recommended Action: Review high-priority WorkCover form (doc_017) and confirm 3 pending appointments.`;
+â€¢ Active Patient Enquiries: ${patients.length} records in queue.
+â€¢ Document Intelligence: ${documents.filter((d) => d.status === "completed").length} processed, ${documents.filter((d) => d.status === "needs_review").length} requiring human validation.
+â€¢ Data Quality: ${validationIssues.length} active validation flags.
+â€¢ Recommended Action: Review high-priority WorkCover form (doc_017) and confirm 3 pending appointments.`;
       } else if (prompt.toLowerCase().includes("email") || prompt.toLowerCase().includes("draft")) {
         reply = `Subject: Important: Additional Details Required for Your Medical Registration
 
@@ -119,9 +118,9 @@ Administrative Operations Team
 MIRA Ops Healthcare Partner Practice`;
       } else {
         reply = `Administrative Analysis:
-• Request Categorization: Administrative Workflow & Documentation
-• Integrity Assessment: Input analyzed against current clinic operating procedures.
-• Next Steps: All fields match standard Australian healthcare intake guidelines. You can confirm or export this record directly from the Operations Dashboard.`;
+â€¢ Request Categorization: Administrative Workflow & Documentation
+â€¢ Integrity Assessment: Input analyzed against current clinic operating procedures.
+â€¢ Next Steps: All fields match standard Australian healthcare intake guidelines. You can confirm or export this record directly from the Operations Dashboard.`;
       }
     }
 

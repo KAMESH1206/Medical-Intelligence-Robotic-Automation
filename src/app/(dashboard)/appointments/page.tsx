@@ -1,6 +1,5 @@
-"use client";
+﻿"use client";
 
-export const instant = false;
 
 import React, { useState } from "react";
 import { useMiraStore } from "@/lib/store";
@@ -190,7 +189,7 @@ export default function AppointmentsPage() {
                         <div className="text-[11px] text-[#74778A] truncate max-w-xs">{apt.notes}</div>
                       )}
                     </td>
-                    <td className="text-xs text-[#25283A] font-medium">{apt.clinicName || "—"}</td>
+                    <td className="text-xs text-[#25283A] font-medium">{apt.clinicName || "â€”"}</td>
                     <td>
                       <div className="flex items-center gap-1.5 text-xs text-[#25283A]">
                         <Calendar className="w-3.5 h-3.5 text-[#8DB9F0]" />
@@ -265,7 +264,7 @@ export default function AppointmentsPage() {
                 onClick={() => setIsNewModalOpen(false)}
                 className="text-gray-400 hover:text-gray-600 font-bold text-lg"
               >
-                ✕
+                âœ•
               </button>
             </div>
 

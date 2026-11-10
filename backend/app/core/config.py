@@ -23,9 +23,12 @@ class Settings(BaseSettings):
         "sqlite:///./mira_ops.db"
     )
 
-    # LLM Keys
+    # LLM Keys & Gateways
     ANTHROPIC_API_KEY: str = os.getenv("ANTHROPIC_API_KEY", "")
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
+    N1N_API_KEY: str = os.getenv("N1N_API_KEY", "")
+    N1N_BASE_URL: str = os.getenv("N1N_BASE_URL", "https://api.n1n.ai/v1")
+    N1N_MODEL: str = os.getenv("N1N_MODEL", "gpt-4o")
 
     # CORS
     BACKEND_CORS_ORIGINS: List[str] = [

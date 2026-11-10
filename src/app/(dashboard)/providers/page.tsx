@@ -1,6 +1,5 @@
-"use client";
+﻿"use client";
 
-export const instant = false;
 
 import React, { useState } from "react";
 import { useMiraStore } from "@/lib/store";
@@ -201,8 +200,8 @@ export default function ProvidersPage() {
                     <div className="text-[10px] text-[#74778A] truncate max-w-xs">{prv.address}</div>
                   </td>
                   <td className="text-xs text-[#25283A]">
-                    <div>{prv.phone || "—"}</div>
-                    <div className="text-[11px] text-[#74778A]">{prv.email || "—"}</div>
+                    <div>{prv.phone || "â€”"}</div>
+                    <div className="text-[11px] text-[#74778A]">{prv.email || "â€”"}</div>
                   </td>
                   <td>
                     {prv.sourceUrl ? (

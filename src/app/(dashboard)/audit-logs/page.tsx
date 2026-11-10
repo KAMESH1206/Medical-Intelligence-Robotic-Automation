@@ -1,6 +1,5 @@
-"use client";
+﻿"use client";
 
-export const instant = false;
 
 import React, { useState } from "react";
 import { useMiraStore } from "@/lib/store";
@@ -169,7 +168,7 @@ export default function AuditLogsPage() {
                         {JSON.stringify(log.details)}
                       </pre>
                     ) : (
-                      <span className="text-[11px] text-[#9699AA]">—</span>
+                      <span className="text-[11px] text-[#9699AA]">â€”</span>
                     )}
                   </td>
                   <td className="text-xs text-[#74778A] font-mono">
