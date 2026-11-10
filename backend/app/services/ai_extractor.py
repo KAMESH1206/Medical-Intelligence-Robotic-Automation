@@ -36,9 +36,9 @@ def extract_entities(text: str, version: int = 3) -> Dict[str, Any]:
 
     # Name extraction heuristic
     name = None
-    name_match = re.search(r'(?:patient|name is|i am)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)', text, re.IGNORECASE)
+    name_match = re.search(r'(?:patient name:|worker name:|patient|name is|i am|name:)\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)', text, re.IGNORECASE)
     if name_match:
-        name = name_match.group(1)
+        name = name_match.group(1).strip()
 
     duration_ms = int((time.time() - start_time) * 1000) + (45 if version == 3 else 25)
 
