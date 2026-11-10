@@ -28,11 +28,15 @@ export async function POST(request: Request) {
     // Always BCC the admin email (user) during testing so they receive every notice directly
     const bccList = user && user !== finalTo ? user : undefined;
 
-    // Create real SMTP Transporter with SSL
+    // Create real SMTP Transporter with SSL & IPv4 Enforced
     const transporter = nodemailer.createTransport({
       host,
       port,
       secure: port === 465 || host === "smtp.gmail.com",
+      family: 4, // Force IPv4 to eliminate Windows 90s IPv6 stall
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
       auth: {
         user: user.trim(),
         pass: pass.trim(),
