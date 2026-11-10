@@ -14,12 +14,13 @@ import {
   CheckCircle2,
   AlertTriangle,
   Info,
+  Trash2,
 } from "lucide-react";
 
 export default function SettingsPage() {
-  const { currentUser, setRole, resetDemoData } = useMiraStore();
-  const [anthropicKey, setAnthropicKey] = useState("sk-ant-â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢");
-  const [openaiKey, setOpenaiKey] = useState("sk-proj-â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢");
+  const { currentUser, setRole, resetDemoData, clearAllRecords } = useMiraStore();
+  const [anthropicKey, setAnthropicKey] = useState("");
+  const [openaiKey, setOpenaiKey] = useState("");
   const [activeModel, setActiveModel] = useState("claude-3-haiku");
   const [saveSuccess, setSaveSuccess] = useState(false);
 
@@ -155,26 +156,53 @@ export default function SettingsPage() {
         </div>
       </form>
 
-      {/* System Cache Synchronization */}
-      <div className="p-5 rounded-2xl bg-white border border-[#DFDEEB] shadow-xs flex items-center justify-between">
-        <div>
-          <h3 className="text-sm font-bold text-[#25283A] flex items-center gap-2">
-            <RotateCcw className="w-4 h-4 text-[#8DB9F0]" />
-            <span>Synchronize Clinical Data Records</span>
-          </h3>
-          <p className="text-xs text-[#74778A] mt-0.5">
-            Refreshes all patient intake files, appointment schedules, and quality validation rules from live database storage.
-          </p>
+      {/* Data Management & Testing Controls */}
+      <div className="p-5 rounded-2xl bg-white border border-[#DFDEEB] shadow-xs space-y-4">
+        <div className="flex items-center justify-between pb-3 border-b border-[#DFDEEB]">
+          <div>
+            <h3 className="text-sm font-bold text-[#25283A] flex items-center gap-2">
+              <Trash2 className="w-4 h-4 text-[#F5B69E]" />
+              <span>Clear Test Data (Start Clean with Real Data)</span>
+            </h3>
+            <p className="text-xs text-[#74778A] mt-0.5">
+              Removes all sample records so you can test real patient intake, live document uploads, and actual clinical workflows from scratch.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              if (confirm("Are you sure you want to clear all test records? All tables will be empty and ready for real data entry.")) {
+                clearAllRecords();
+                alert("All test records have been cleared. You now have a clean slate to test with real data!");
+              }
+            }}
+            className="px-3.5 py-1.5 rounded-lg border border-[#F5B69E] bg-[#F5B69E]/15 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-300 text-[#25283A] text-xs font-semibold transition cursor-pointer"
+          >
+            Clear All Test Records
+          </button>
         </div>
-        <button
-          onClick={() => {
-            resetDemoData();
-            alert("Clinical records synchronized successfully.");
-          }}
-          className="px-3.5 py-1.5 rounded-lg border border-[#DFDEEB] bg-[#F8F8FC] hover:bg-[#E9E8F8] text-[#25283A] text-xs font-semibold transition cursor-pointer"
-        >
-          Synchronize Records
-        </button>
+
+        <div className="flex items-center justify-between pt-1">
+          <div>
+            <h3 className="text-sm font-bold text-[#25283A] flex items-center gap-2">
+              <RotateCcw className="w-4 h-4 text-[#8DB9F0]" />
+              <span>Restore Reference Baseline Dataset</span>
+            </h3>
+            <p className="text-xs text-[#74778A] mt-0.5">
+              Reloads the standard Australian healthcare demonstration records (useful for quick interview demos).
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              resetDemoData();
+              alert("Reference baseline records restored successfully.");
+            }}
+            className="px-3.5 py-1.5 rounded-lg border border-[#DFDEEB] bg-[#F8F8FC] hover:bg-[#E9E8F8] text-[#25283A] text-xs font-semibold transition cursor-pointer"
+          >
+            Restore Baseline Dataset
+          </button>
+        </div>
       </div>
 
       {/* Healthcare Compliance & Security Framework */}

@@ -150,8 +150,18 @@ export default function DocumentsPage() {
             <tbody>
               {filteredDocs.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-8 text-[#9699AA]">
-                    No documents found matching current filter.
+                  <td colSpan={6} className="text-center py-12 text-[#74778A]">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <div className="w-12 h-12 rounded-full bg-[#8DB9F0]/15 flex items-center justify-center text-[#8DB9F0]">
+                        <UploadCloud className="w-6 h-6" />
+                      </div>
+                      <div className="font-semibold text-sm text-[#25283A]">No Documents in Processing Queue</div>
+                      <p className="text-xs text-[#74778A] max-w-sm">
+                        {documents.length === 0
+                          ? "Your document repository is clear. Drag and drop a medical referral PDF or scan above to extract clinical JSON."
+                          : "No documents match your active filter."}
+                      </p>
+                    </div>
                   </td>
                 </tr>
               ) : (

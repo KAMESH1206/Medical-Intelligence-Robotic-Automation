@@ -79,6 +79,7 @@ interface MiraStoreContextType {
   logAudit: (action: AuditLog["action"], resourceType?: string, resourceId?: string, details?: Record<string, unknown>) => void;
   // Reset
   resetDemoData: () => void;
+  clearAllRecords: () => void;
 }
 
 const MiraStoreContext = createContext<MiraStoreContextType | null>(null);
@@ -665,6 +666,27 @@ export function MiraStoreProvider({ children }: { children: React.ReactNode }) {
     logAudit("settings_changed", "system", undefined, { action: "reset_to_seed_data" });
   };
 
+  const clearAllRecords = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    setPatients([]);
+    setDocuments([]);
+    setAppointments([]);
+    setValidationIssues([]);
+    setDuplicateCandidates([]);
+    setWorkflowExecutions([]);
+    setPromptExecutions([]);
+    saveState({
+      patients: [],
+      documents: [],
+      appointments: [],
+      validationIssues: [],
+      duplicateCandidates: [],
+      workflowExecutions: [],
+      promptExecutions: [],
+    });
+    logAudit("settings_changed", "system", undefined, { action: "cleared_all_records_for_real_data" });
+  };
+
   return (
     <MiraStoreContext.Provider
       value={{
@@ -702,6 +724,7 @@ export function MiraStoreProvider({ children }: { children: React.ReactNode }) {
         auditLogs,
         logAudit,
         resetDemoData,
+        clearAllRecords,
       }}
     >
       {children}

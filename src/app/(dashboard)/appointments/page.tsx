@@ -177,8 +177,18 @@ export default function AppointmentsPage() {
             <tbody>
               {filteredAppointments.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-8 text-[#9699AA]">
-                    No appointments match the criteria.
+                  <td colSpan={6} className="text-center py-12 text-[#74778A]">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <div className="w-12 h-12 rounded-full bg-[#8DB9F0]/15 flex items-center justify-center text-[#8DB9F0]">
+                        <Calendar className="w-6 h-6" />
+                      </div>
+                      <div className="font-semibold text-sm text-[#25283A]">No Scheduled Appointments</div>
+                      <p className="text-xs text-[#74778A] max-w-sm">
+                        {appointments.length === 0
+                          ? "The calendar is open. Click '+ Book Appointment' to schedule a consultation with conflict checking."
+                          : "No appointments match your active search and filter criteria."}
+                      </p>
+                    </div>
                   </td>
                 </tr>
               ) : (
@@ -190,7 +200,7 @@ export default function AppointmentsPage() {
                         <div className="text-[11px] text-[#74778A] truncate max-w-xs">{apt.notes}</div>
                       )}
                     </td>
-                    <td className="text-xs text-[#25283A] font-medium">{apt.clinicName || "â€”"}</td>
+                    <td className="text-xs text-[#25283A] font-medium">{apt.clinicName || "—"}</td>
                     <td>
                       <div className="flex items-center gap-1.5 text-xs text-[#25283A]">
                         <Calendar className="w-3.5 h-3.5 text-[#8DB9F0]" />

@@ -203,8 +203,27 @@ export default function PatientsPage() {
             <tbody>
               {filteredPatients.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-8 text-[#9699AA]">
-                    No patient records found matching current criteria.
+                  <td colSpan={6} className="text-center py-12 text-[#74778A]">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <div className="w-12 h-12 rounded-full bg-[#8DB9F0]/15 flex items-center justify-center text-[#8DB9F0]">
+                        <UserPlus className="w-6 h-6" />
+                      </div>
+                      <div className="font-semibold text-sm text-[#25283A]">No Patient Enquiries in Queue</div>
+                      <p className="text-xs text-[#74778A] max-w-sm">
+                        {patients.length === 0
+                          ? "Your intake queue is clean. Click '+ New Patient Intake' to submit and validate a real patient enquiry."
+                          : "No records match your current search and filter criteria."}
+                      </p>
+                      {patients.length === 0 && perms.canAddPatient && (
+                        <button
+                          type="button"
+                          onClick={() => setIsAddModalOpen(true)}
+                          className="mt-2 mira-btn-primary text-xs cursor-pointer"
+                        >
+                          + New Patient Intake
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ) : (
@@ -219,7 +238,7 @@ export default function PatientsPage() {
                       <div className="text-[11px] text-[#74778A]">{patient.email || <span className="text-rose-500 font-medium">Missing email</span>}</div>
                     </td>
                     <td>
-                      <div className="text-xs font-medium text-[#25283A]">{patient.preferredClinic || "â€”"}</div>
+                      <div className="text-xs font-medium text-[#25283A]">{patient.preferredClinic || "—"}</div>
                       <div className="text-[11px] text-[#74778A]">{patient.enquiryCategory || "General"}</div>
                     </td>
                     <td>
@@ -291,7 +310,7 @@ export default function PatientsPage() {
         </div>
         <div className="p-3 border-t border-[#DFDEEB] bg-[#F8F8FC] flex items-center justify-between text-xs text-[#74778A]">
           <span>Showing {filteredPatients.length} of {patients.length} records</span>
-          <span className="text-[11px] text-[#9699AA]">Synthetic Australian Healthcare Intake Data</span>
+          <span className="text-[11px] text-[#9699AA]">Verified Clinical Operations Data</span>
         </div>
       </div>
 

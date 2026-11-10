@@ -157,8 +157,14 @@ export default function DataQualityPage() {
             <tbody>
               {validationIssues.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-8 text-[#248A63] font-semibold">
-                    âœ“ All records currently pass data quality rules!
+                  <td colSpan={5} className="text-center py-12 text-[#74778A]">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600">
+                        <CheckCircle2 className="w-6 h-6" />
+                      </div>
+                      <div className="font-semibold text-sm text-[#25283A]">100% Data Hygiene</div>
+                      <p className="text-xs text-[#74778A]">All clinical records currently pass Australian healthcare validation rules.</p>
+                    </div>
                   </td>
                 </tr>
               ) : (
@@ -223,7 +229,20 @@ export default function DataQualityPage() {
                 </tr>
               </thead>
               <tbody>
-                {duplicateCandidates.map((dup) => (
+                {duplicateCandidates.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="text-center py-12 text-[#74778A]">
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600">
+                          <CheckCircle2 className="w-6 h-6" />
+                        </div>
+                        <div className="font-semibold text-sm text-[#25283A]">Zero Duplicate Candidates</div>
+                        <p className="text-xs text-[#74778A]">All clinical records are distinct. No merge actions required.</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  duplicateCandidates.map((dup) => (
                   <tr key={dup.id}>
                     <td className="font-semibold text-xs text-[#25283A]">{dup.record1Name}</td>
                     <td className="font-semibold text-xs text-[#74778A]">{dup.record2Name}</td>
@@ -295,7 +314,7 @@ export default function DataQualityPage() {
                       )}
                     </td>
                   </tr>
-                ))}
+                )))}
               </tbody>
             </table>
           </div>
