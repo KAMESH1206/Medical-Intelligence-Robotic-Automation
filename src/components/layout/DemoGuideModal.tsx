@@ -61,8 +61,8 @@ export default function DemoGuideModal() {
 
       {/* Operations Reference Modal */}
       {isOpen && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-[#DFDEEB] space-y-4 max-h-[85vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
+          <div className="relative w-full max-w-lg my-auto bg-white rounded-2xl p-6 shadow-2xl border border-[#DFDEEB] space-y-4 max-h-[85vh] overflow-y-auto">
             <div className="flex items-start justify-between border-b border-[#DFDEEB] pb-3">
               <div>
                 <div className="flex items-center gap-1.5 text-xs font-bold text-[#8DB9F0] uppercase tracking-wider">

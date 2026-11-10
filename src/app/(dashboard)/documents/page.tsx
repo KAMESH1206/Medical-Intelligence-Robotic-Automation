@@ -18,6 +18,7 @@ import {
   Search,
   Filter,
   Lock,
+  X,
 } from "lucide-react";
 
 export default function DocumentsPage() {
@@ -256,8 +257,8 @@ export default function DocumentsPage() {
 
       {/* Document Inspector Modal */}
       {selectedDoc && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-[#DFDEEB] space-y-4 max-h-[85vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
+          <div className="relative w-full max-w-2xl my-auto bg-white rounded-2xl p-6 shadow-2xl border border-[#DFDEEB] space-y-4 max-h-[85vh] overflow-y-auto">
             <div className="flex items-start justify-between border-b border-[#DFDEEB] pb-3">
               <div>
                 <span className="text-[10px] uppercase font-bold text-[#8DB9F0] px-2 py-0.5 rounded bg-[#E9E8F8]">
@@ -266,10 +267,11 @@ export default function DocumentsPage() {
                 <h3 className="text-base font-bold text-[#25283A] mt-1">{selectedDoc.filename}</h3>
               </div>
               <button
+                type="button"
                 onClick={() => setSelectedDoc(null)}
-                className="text-gray-400 hover:text-gray-600 font-bold text-lg"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-[#74778A] hover:text-[#25283A] hover:bg-[#F8F8FC] transition cursor-pointer"
               >
-                âœ•
+                <X className="w-5 h-5" />
               </button>
             </div>
 

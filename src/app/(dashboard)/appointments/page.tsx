@@ -16,6 +16,7 @@ import {
   AlertCircle,
   Building,
   User,
+  X,
 } from "lucide-react";
 
 export default function AppointmentsPage() {
@@ -253,18 +254,19 @@ export default function AppointmentsPage() {
 
       {/* New Appointment Modal */}
       {isNewModalOpen && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-[#DFDEEB] space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
+          <div className="relative w-full max-w-md my-auto bg-white rounded-2xl p-6 shadow-2xl border border-[#DFDEEB] space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-[#DFDEEB] pb-3">
               <div>
                 <h3 className="text-base font-bold text-[#25283A]">New Appointment Booking</h3>
                 <p className="text-xs text-[#74778A]">Creates request with automated clinic conflict checking</p>
               </div>
               <button
+                type="button"
                 onClick={() => setIsNewModalOpen(false)}
-                className="text-gray-400 hover:text-gray-600 font-bold text-lg"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-[#74778A] hover:text-[#25283A] hover:bg-[#F8F8FC] transition cursor-pointer"
               >
-                âœ•
+                <X className="w-5 h-5" />
               </button>
             </div>
 

@@ -18,6 +18,7 @@ import {
   Download,
   Building,
   Lock,
+  X,
 } from "lucide-react";
 
 export default function PatientsPage() {
@@ -296,8 +297,8 @@ export default function PatientsPage() {
 
       {/* Patient Detail Drawer / Modal */}
       {selectedPatient && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-[#DFDEEB] space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
+          <div className="relative w-full max-w-lg my-auto bg-white rounded-2xl p-6 shadow-2xl border border-[#DFDEEB] space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-start justify-between border-b border-[#DFDEEB] pb-3">
               <div>
                 <span className="text-[11px] font-mono text-[#8DB9F0] font-bold">
@@ -306,10 +307,11 @@ export default function PatientsPage() {
                 <h3 className="text-lg font-bold text-[#25283A]">{selectedPatient.name}</h3>
               </div>
               <button
+                type="button"
                 onClick={() => setSelectedPatient(null)}
-                className="text-gray-400 hover:text-gray-600 font-bold text-lg"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-[#74778A] hover:text-[#25283A] hover:bg-[#F8F8FC] transition cursor-pointer"
               >
-                âœ•
+                <X className="w-5 h-5" />
               </button>
             </div>
 
@@ -356,8 +358,9 @@ export default function PatientsPage() {
                 </select>
               </div>
               <button
+                type="button"
                 onClick={() => setSelectedPatient(null)}
-                className="px-4 py-1.5 rounded-lg bg-[#8DB9F0] text-white text-xs font-semibold hover:bg-[#6BA3E8] transition"
+                className="px-4 py-1.5 rounded-lg bg-[#8DB9F0] text-white text-xs font-semibold hover:bg-[#6BA3E8] transition cursor-pointer"
               >
                 Done
               </button>
@@ -368,18 +371,19 @@ export default function PatientsPage() {
 
       {/* Add Patient Modal */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-[#DFDEEB] space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
+          <div className="relative w-full max-w-lg my-auto bg-white rounded-2xl p-6 shadow-2xl border border-[#DFDEEB] space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-[#DFDEEB] pb-3">
               <div>
                 <h3 className="text-base font-bold text-[#25283A]">New Patient Enquiry Intake</h3>
                 <p className="text-xs text-[#74778A]">Enter patient details for automated validation and categorization</p>
               </div>
               <button
+                type="button"
                 onClick={() => setIsAddModalOpen(false)}
-                className="text-gray-400 hover:text-gray-600 font-bold text-lg"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-[#74778A] hover:text-[#25283A] hover:bg-[#F8F8FC] transition cursor-pointer"
               >
-                âœ•
+                <X className="w-5 h-5" />
               </button>
             </div>
 

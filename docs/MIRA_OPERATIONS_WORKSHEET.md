@@ -281,3 +281,4 @@ When demonstrating the platform to technical interviewers, follow this exact 5-m
 ---
 
 *This worksheet represents the official architecture and operational specification for the MIRA Ops Intelligence platform.*
+
