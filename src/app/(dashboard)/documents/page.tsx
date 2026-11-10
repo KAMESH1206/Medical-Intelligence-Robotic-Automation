@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useMiraStore } from "@/lib/store";
+import { ROLE_PERMISSIONS } from "@/lib/constants";
 import type { Document, DocumentStatus } from "@/lib/types";
 import {
   UploadCloud,
@@ -15,10 +16,12 @@ import {
   Sparkles,
   Search,
   Filter,
+  Lock,
 } from "lucide-react";
 
 export default function DocumentsPage() {
-  const { documents, uploadDocument, processDocument, approveDocument, rejectDocument } = useMiraStore();
+  const { documents, uploadDocument, processDocument, approveDocument, rejectDocument, currentUser } = useMiraStore();
+  const perms = ROLE_PERMISSIONS[currentUser.role] || ROLE_PERMISSIONS.healthcare_admin;
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedDoc, setSelectedDoc] = useState<Document | null>(null);
@@ -311,26 +314,35 @@ export default function DocumentsPage() {
             {/* Human In The Loop Validation Actions */}
             <div className="flex items-center justify-between pt-3 border-t border-[#DFDEEB]">
               <div className="flex items-center gap-2">
-                <button
-                  onClick={() => {
-                    approveDocument(selectedDoc.id);
-                    setSelectedDoc({ ...selectedDoc, status: "completed" });
-                  }}
-                  className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 transition flex items-center gap-1.5"
-                >
-                  <CheckCircle className="w-3.5 h-3.5" />
-                  <span>Approve Data</span>
-                </button>
-                <button
-                  onClick={() => {
-                    rejectDocument(selectedDoc.id);
-                    setSelectedDoc({ ...selectedDoc, status: "rejected" });
-                  }}
-                  className="px-3 py-1.5 rounded-lg border border-rose-200 bg-rose-50 text-rose-600 text-xs font-semibold hover:bg-rose-100 transition flex items-center gap-1.5"
-                >
-                  <XCircle className="w-3.5 h-3.5" />
-                  <span>Reject</span>
-                </button>
+                {perms.canApproveDocument ? (
+                  <>
+                    <button
+                      onClick={() => {
+                        approveDocument(selectedDoc.id);
+                        setSelectedDoc({ ...selectedDoc, status: "completed" });
+                      }}
+                      className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 transition flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <CheckCircle className="w-3.5 h-3.5" />
+                      <span>Approve Data</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        rejectDocument(selectedDoc.id);
+                        setSelectedDoc({ ...selectedDoc, status: "rejected" });
+                      }}
+                      className="px-3 py-1.5 rounded-lg border border-rose-200 bg-rose-50 text-rose-600 text-xs font-semibold hover:bg-rose-100 transition flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <XCircle className="w-3.5 h-3.5" />
+                      <span>Reject</span>
+                    </button>
+                  </>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#F8F8FC] border border-[#DFDEEB] text-xs font-medium text-[#74778A]">
+                    <Lock className="w-3.5 h-3.5 text-[#9699AA]" />
+                    <span>Approval Authority Locked ({perms.label} Role)</span>
+                  </span>
+                )}
               </div>
 
               <button

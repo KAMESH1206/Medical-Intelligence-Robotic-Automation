@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useMiraStore } from "@/lib/store";
+import { ROLE_PERMISSIONS } from "@/lib/constants";
 import type { Workflow, WorkflowExecution } from "@/lib/types";
 import {
   GitBranch,
@@ -14,10 +15,13 @@ import {
   ArrowRight,
   Shield,
   Layers,
+  Lock,
+  AlertTriangle,
 } from "lucide-react";
 
 export default function AutomationPage() {
-  const { workflows, workflowExecutions, runWorkflow } = useMiraStore();
+  const { workflows, workflowExecutions, runWorkflow, currentUser } = useMiraStore();
+  const perms = ROLE_PERMISSIONS[currentUser.role] || ROLE_PERMISSIONS.healthcare_admin;
   const [runningId, setRunningId] = useState<string | null>(null);
   const [selectedExecution, setSelectedExecution] = useState<WorkflowExecution | null>(null);
 
@@ -47,6 +51,15 @@ export default function AutomationPage() {
           </span>
         </div>
       </div>
+
+      {!perms.canExecuteWorkflows && (
+        <div className="p-3.5 rounded-xl bg-[#FFF3DC] border border-[#D99035]/30 flex items-center gap-2.5 text-xs text-[#D99035]">
+          <AlertTriangle className="w-4 h-4 shrink-0" />
+          <span>
+            <strong>Read-Only Monitoring:</strong> Currently viewing as <strong>{perms.label}</strong>. Robotic pipeline execution requires <strong>Operations Executive</strong> or <strong>Super Admin</strong> authorization.
+          </span>
+        </div>
+      )}
 
       {/* Configured Workflows Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -98,11 +111,29 @@ export default function AutomationPage() {
               </div>
               <button
                 onClick={() => handleRun(wf.id)}
-                disabled={runningId === wf.id}
-                className="px-3 py-1.5 rounded-lg bg-[#8DB9F0] text-white text-xs font-semibold hover:bg-[#6BA3E8] transition flex items-center gap-1.5 disabled:opacity-50"
+                disabled={runningId === wf.id || !perms.canExecuteWorkflows}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 ${
+                  perms.canExecuteWorkflows
+                    ? "bg-[#8DB9F0] text-white hover:bg-[#6BA3E8] cursor-pointer"
+                    : "bg-[#F8F8FC] border border-[#DFDEEB] text-[#9699AA] cursor-not-allowed"
+                }`}
+                title={
+                  !perms.canExecuteWorkflows
+                    ? `Execution requires Operations Executive authorization (Current: ${perms.label})`
+                    : "Run pipeline"
+                }
               >
-                <Play className="w-3 h-3" />
-                <span>{runningId === wf.id ? "Running Pipeline..." : "Execute Workflow"}</span>
+                {perms.canExecuteWorkflows ? (
+                  <>
+                    <Play className="w-3 h-3" />
+                    <span>{runningId === wf.id ? "Running Pipeline..." : "Execute Workflow"}</span>
+                  </>
+                ) : (
+                  <>
+                    <Lock className="w-3 h-3 text-[#9699AA]" />
+                    <span>Execution Locked</span>
+                  </>
+                )}
               </button>
             </div>
           </div>

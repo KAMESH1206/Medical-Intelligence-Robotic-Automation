@@ -49,7 +49,7 @@ export default function DashboardLayout({
         </main>
       </div>
 
-      {/* Floating Interview Demo Assistant */}
+      {/* Floating Operations Reference Guide */}
       <DemoGuideModal />
     </div>
   );

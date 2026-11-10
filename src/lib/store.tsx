@@ -494,7 +494,7 @@ export function MiraStoreProvider({ children }: { children: React.ReactNode }) {
         sourceUrl: sourceUrl || "https://healthengine.com.au/brisbane/gp",
         collectedAt: new Date().toISOString(),
         status: "active",
-        isDemoData: true,
+        isDemoData: false,
       },
       {
         id: `prv_${Date.now()}_2`,
@@ -509,7 +509,7 @@ export function MiraStoreProvider({ children }: { children: React.ReactNode }) {
         sourceUrl: sourceUrl || "https://hotdoc.com.au/perth",
         collectedAt: new Date().toISOString(),
         status: "active",
-        isDemoData: true,
+        isDemoData: false,
       },
     ];
 

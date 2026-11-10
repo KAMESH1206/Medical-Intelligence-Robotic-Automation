@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useMiraStore } from "@/lib/store";
+import { ROLE_PERMISSIONS } from "@/lib/constants";
 import {
   ShieldCheck,
   AlertTriangle,
@@ -12,6 +13,7 @@ import {
   Download,
   Filter,
   ArrowRight,
+  Lock,
 } from "lucide-react";
 
 export default function DataQualityPage() {
@@ -21,7 +23,9 @@ export default function DataQualityPage() {
     resolveValidationIssue,
     duplicateCandidates,
     resolveDuplicate,
+    currentUser,
   } = useMiraStore();
+  const perms = ROLE_PERMISSIONS[currentUser.role] || ROLE_PERMISSIONS.healthcare_admin;
 
   const [activeTab, setActiveTab] = useState<"issues" | "duplicates">("issues");
   const [selectedDuplicate, setSelectedDuplicate] = useState<any | null>(null);
@@ -102,6 +106,15 @@ export default function DataQualityPage() {
           <div className="text-[11px] text-amber-600 mt-1">Requires human review</div>
         </div>
       </div>
+
+      {!perms.canResolveDuplicates && (
+        <div className="p-3.5 rounded-xl bg-[#FFF3DC] border border-[#D99035]/30 flex items-center gap-2.5 text-xs text-[#D99035]">
+          <AlertTriangle className="w-4 h-4 shrink-0" />
+          <span>
+            <strong>Read-Only Quality Governance:</strong> Viewing as <strong>{perms.label}</strong>. Deduplication triage and record merges require <strong>Data Coordinator</strong> or <strong>Healthcare Administrator</strong> authority.
+          </span>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex items-center gap-2 border-b border-[#DFDEEB] pb-2 text-xs font-semibold">
@@ -253,22 +266,29 @@ export default function DataQualityPage() {
                     </td>
                     <td className="text-right">
                       {dup.status === "pending" ? (
-                        <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            onClick={() => resolveDuplicate(dup.id, "confirmed_duplicate")}
-                            className="px-2 py-1 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 text-xs font-semibold transition"
-                            title="Confirm as duplicate"
-                          >
-                            Confirm Duplicate
-                          </button>
-                          <button
-                            onClick={() => resolveDuplicate(dup.id, "not_duplicate")}
-                            className="px-2 py-1 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200 text-xs font-semibold transition"
-                            title="Distinct patient"
-                          >
-                            Not Duplicate
-                          </button>
-                        </div>
+                        perms.canResolveDuplicates ? (
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => resolveDuplicate(dup.id, "confirmed_duplicate")}
+                              className="px-2 py-1 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 text-xs font-semibold transition cursor-pointer"
+                              title="Confirm as duplicate"
+                            >
+                              Confirm Duplicate
+                            </button>
+                            <button
+                              onClick={() => resolveDuplicate(dup.id, "not_duplicate")}
+                              className="px-2 py-1 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200 text-xs font-semibold transition cursor-pointer"
+                              title="Distinct patient"
+                            >
+                              Not Duplicate
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-[11px] text-[#9699AA] inline-flex items-center gap-1 italic">
+                            <Lock className="w-3 h-3 text-[#9699AA]" />
+                            <span>Coordinator Required</span>
+                          </span>
+                        )
                       ) : (
                         <span className="text-xs text-[#9699AA] italic">Resolved</span>
                       )}

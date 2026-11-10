@@ -1,3 +1,5 @@
+import type { Role } from "./types";
+
 // ============================================
 // MIRA Ops Intelligence — Constants & Defaults
 // ============================================
@@ -27,6 +29,147 @@ export const ROLES = [
   { value: "operations_executive", label: "Operations Executive", badge: "mira-badge-yellow" },
   { value: "viewer", label: "Viewer", badge: "mira-badge-gray" },
 ] as const;
+
+export interface RolePermissionConfig {
+  label: string;
+  badge: string;
+  color: string;
+  scopeSummary: string;
+  allowedRoutes: string[];
+  canAddPatient: boolean;
+  canDeletePatient: boolean;
+  canApproveDocument: boolean;
+  canResolveDuplicates: boolean;
+  canExecuteWorkflows: boolean;
+  canRunPromptTests: boolean;
+  canEditSettings: boolean;
+}
+
+export const ROLE_PERMISSIONS: Record<Role, RolePermissionConfig> = {
+  super_admin: {
+    label: "Super Admin",
+    badge: "mira-badge-peach",
+    color: "#EE9478",
+    scopeSummary: "Full Unrestricted Access • Clinical, Robotic & Prompt Lab Authority",
+    allowedRoutes: [
+      "/dashboard",
+      "/patients",
+      "/documents",
+      "/data-quality",
+      "/appointments",
+      "/providers",
+      "/ai-assistant",
+      "/automation",
+      "/analytics",
+      "/prompt-lab",
+      "/audit-logs",
+      "/settings",
+    ],
+    canAddPatient: true,
+    canDeletePatient: true,
+    canApproveDocument: true,
+    canResolveDuplicates: true,
+    canExecuteWorkflows: true,
+    canRunPromptTests: true,
+    canEditSettings: true,
+  },
+  healthcare_admin: {
+    label: "Healthcare Administrator",
+    badge: "mira-badge-blue",
+    color: "#6BA3E8",
+    scopeSummary: "Clinical Operations Lead • Patient Intake & Medical Document Approvals",
+    allowedRoutes: [
+      "/dashboard",
+      "/patients",
+      "/documents",
+      "/data-quality",
+      "/appointments",
+      "/providers",
+      "/ai-assistant",
+      "/automation",
+      "/analytics",
+      "/audit-logs",
+      "/settings",
+    ],
+    canAddPatient: true,
+    canDeletePatient: false,
+    canApproveDocument: true,
+    canResolveDuplicates: true,
+    canExecuteWorkflows: true,
+    canRunPromptTests: false,
+    canEditSettings: false,
+  },
+  data_coordinator: {
+    label: "Data Coordinator",
+    badge: "mira-badge-green",
+    color: "#248A63",
+    scopeSummary: "Data Quality Specialist • Duplicate Reconciliation & Directory Curation",
+    allowedRoutes: [
+      "/dashboard",
+      "/patients",
+      "/documents",
+      "/data-quality",
+      "/appointments",
+      "/providers",
+      "/ai-assistant",
+      "/analytics",
+    ],
+    canAddPatient: true,
+    canDeletePatient: false,
+    canApproveDocument: false,
+    canResolveDuplicates: true,
+    canExecuteWorkflows: false,
+    canRunPromptTests: false,
+    canEditSettings: false,
+  },
+  operations_executive: {
+    label: "Operations Executive",
+    badge: "mira-badge-yellow",
+    color: "#D99035",
+    scopeSummary: "Robotic Automation Lead • Workflow Execution & Scheduling",
+    allowedRoutes: [
+      "/dashboard",
+      "/patients",
+      "/appointments",
+      "/providers",
+      "/ai-assistant",
+      "/automation",
+      "/analytics",
+    ],
+    canAddPatient: false,
+    canDeletePatient: false,
+    canApproveDocument: false,
+    canResolveDuplicates: false,
+    canExecuteWorkflows: true,
+    canRunPromptTests: false,
+    canEditSettings: false,
+  },
+  viewer: {
+    label: "Viewer",
+    badge: "mira-badge-gray",
+    color: "#74778A",
+    scopeSummary: "Read-Only Compliance Auditor • Zero Modification Rights",
+    allowedRoutes: [
+      "/dashboard",
+      "/patients",
+      "/documents",
+      "/data-quality",
+      "/appointments",
+      "/providers",
+      "/ai-assistant",
+      "/automation",
+      "/analytics",
+      "/audit-logs",
+    ],
+    canAddPatient: false,
+    canDeletePatient: false,
+    canApproveDocument: false,
+    canResolveDuplicates: false,
+    canExecuteWorkflows: false,
+    canRunPromptTests: false,
+    canEditSettings: false,
+  },
+};
 
 export const DEFAULT_USER = {
   id: "usr_001",

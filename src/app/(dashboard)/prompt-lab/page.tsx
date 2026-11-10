@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useMiraStore } from "@/lib/store";
+import { ROLE_PERMISSIONS } from "@/lib/constants";
 import {
   FlaskConical,
   Play,
@@ -13,6 +14,7 @@ import {
   BarChart2,
   Code2,
   AlertTriangle,
+  Lock,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -39,7 +41,8 @@ const SAMPLE_TEST_CASES = [
 ];
 
 export default function PromptLabPage() {
-  const { promptVersions, promptExecutions, runPromptTest } = useMiraStore();
+  const { promptVersions, promptExecutions, runPromptTest, currentUser } = useMiraStore();
+  const perms = ROLE_PERMISSIONS[currentUser.role] || ROLE_PERMISSIONS.healthcare_admin;
   const [selectedPromptId, setSelectedPromptId] = useState(promptVersions[2].id);
   const [testInput, setTestInput] = useState(SAMPLE_TEST_CASES[0].text);
   const [isRunning, setIsRunning] = useState(false);
@@ -101,6 +104,15 @@ export default function PromptLabPage() {
           </p>
         </div>
       </div>
+
+      {!perms.canRunPromptTests && (
+        <div className="p-3.5 rounded-xl bg-[#FFF3DC] border border-[#D99035]/30 flex items-center gap-2.5 text-xs text-[#D99035]">
+          <AlertTriangle className="w-4 h-4 shrink-0" />
+          <span>
+            <strong>Prompt Engineering Restricted:</strong> Currently in <strong>{perms.label}</strong> mode. Modifying system prompts and executing LLM benchmarks requires <strong>Super Admin</strong> authorization.
+          </span>
+        </div>
+      )}
 
       {/* Benchmark Summary Comparative Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -186,11 +198,29 @@ export default function PromptLabPage() {
             </div>
             <button
               onClick={handleExecuteTest}
-              disabled={isRunning}
-              className="mira-btn-primary text-xs flex items-center gap-1.5 disabled:opacity-50"
+              disabled={isRunning || !perms.canRunPromptTests}
+              className={`text-xs flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold transition ${
+                perms.canRunPromptTests
+                  ? "bg-[#8DB9F0] text-white hover:bg-[#6BA3E8] cursor-pointer"
+                  : "bg-[#F8F8FC] border border-[#DFDEEB] text-[#9699AA] cursor-not-allowed"
+              }`}
+              title={
+                !perms.canRunPromptTests
+                  ? `Requires Super Admin authorization (Current: ${perms.label})`
+                  : "Execute benchmark"
+              }
             >
-              <Play className="w-3.5 h-3.5" />
-              <span>{isRunning ? "Executing Prompt..." : "Run Evaluation Test"}</span>
+              {perms.canRunPromptTests ? (
+                <>
+                  <Play className="w-3.5 h-3.5" />
+                  <span>{isRunning ? "Executing Prompt..." : "Run Evaluation Test"}</span>
+                </>
+              ) : (
+                <>
+                  <Lock className="w-3.5 h-3.5 text-[#9699AA]" />
+                  <span>Super Admin Required</span>
+                </>
+              )}
             </button>
           </div>
 

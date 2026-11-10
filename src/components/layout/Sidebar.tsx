@@ -3,6 +3,8 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useMiraStore } from "@/lib/store";
+import { ROLE_PERMISSIONS } from "@/lib/constants";
 import {
   LayoutDashboard,
   Users,
@@ -18,6 +20,7 @@ import {
   Settings,
   Sparkles,
   ExternalLink,
+  Lock,
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -37,6 +40,8 @@ const NAV_ITEMS = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { currentUser } = useMiraStore();
+  const perms = ROLE_PERMISSIONS[currentUser.role] || ROLE_PERMISSIONS.healthcare_admin;
 
   return (
     <aside className="w-64 border-r border-[#DFDEEB] bg-[#E9E8F8]/40 flex flex-col h-screen sticky top-0 select-none z-30">
@@ -62,12 +67,25 @@ export default function Sidebar() {
 
       {/* Navigation List */}
       <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-0.5">
-        <div className="text-[11px] font-semibold uppercase tracking-wider text-[#9699AA] px-3 py-1.5">
-          Modules
+        <div className="flex items-center justify-between px-3 py-1.5">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-[#9699AA]">
+            Modules
+          </span>
+          <span
+            className="text-[10px] font-bold px-1.5 py-0.2 rounded"
+            style={{ backgroundColor: `${perms.color}20`, color: perms.color }}
+          >
+            {perms.label}
+          </span>
         </div>
+
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
-          const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
+          const isActive =
+            pathname === item.href ||
+            (item.href !== "/dashboard" && pathname.startsWith(item.href));
+          const isAllowed = perms.allowedRoutes.includes(item.href);
+
           return (
             <Link
               key={item.href}
@@ -75,17 +93,35 @@ export default function Sidebar() {
               className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                 isActive
                   ? "bg-[#8DB9F0] text-white shadow-sm font-semibold"
-                  : "text-[#74778A] hover:bg-[#E9E8F8] hover:text-[#25283A]"
+                  : isAllowed
+                  ? "text-[#74778A] hover:bg-[#E9E8F8] hover:text-[#25283A]"
+                  : "text-[#9699AA]/60 hover:bg-white/50"
               }`}
+              title={
+                !isAllowed
+                  ? `Restricted: Requires higher authority than ${perms.label}`
+                  : item.label
+              }
             >
-              <Icon className={`w-4 h-4 ${isActive ? "text-white" : "text-[#74778A]"}`} />
+              <Icon
+                className={`w-4 h-4 shrink-0 ${
+                  isActive
+                    ? "text-white"
+                    : isAllowed
+                    ? "text-[#74778A]"
+                    : "text-[#9699AA]/50"
+                }`}
+              />
               <span className="truncate">{item.label}</span>
+              {!isAllowed && (
+                <Lock className="w-3 h-3 text-[#9699AA] ml-auto shrink-0 opacity-60" />
+              )}
             </Link>
           );
         })}
       </nav>
 
-      {/* Disclaimers & Footer */}
+      {/* Footer & Status */}
       <div className="p-3 border-t border-[#DFDEEB] bg-white/60 text-[11px] text-[#74778A] space-y-2">
         <div className="flex items-center justify-between">
           <Link
@@ -95,14 +131,10 @@ export default function Sidebar() {
             Landing Page <ExternalLink className="w-3 h-3" />
           </Link>
           <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-[#248A63] text-[10px] font-semibold">
-            Demo Live
+            Operations Active
           </span>
         </div>
-        <p className="text-[10px] text-[#9699AA] leading-tight">
-          Independent prototype inspired by public healthcare automation challenges. Not an official Gokul Infocare product.
-        </p>
       </div>
     </aside>
   );
 }
-

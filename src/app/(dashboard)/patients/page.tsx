@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useMiraStore } from "@/lib/store";
-import { CLINIC_LOCATIONS, ENQUIRY_CATEGORIES } from "@/lib/constants";
+import { CLINIC_LOCATIONS, ENQUIRY_CATEGORIES, ROLE_PERMISSIONS } from "@/lib/constants";
 import type { Patient, PatientStatus } from "@/lib/types";
 import {
   UserPlus,
@@ -16,10 +16,12 @@ import {
   Sparkles,
   Download,
   Building,
+  Lock,
 } from "lucide-react";
 
 export default function PatientsPage() {
-  const { patients, addPatient, deletePatient, updatePatient } = useMiraStore();
+  const { patients, addPatient, deletePatient, updatePatient, currentUser } = useMiraStore();
+  const perms = ROLE_PERMISSIONS[currentUser.role] || ROLE_PERMISSIONS.healthcare_admin;
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [clinicFilter, setClinicFilter] = useState<string>("all");
@@ -113,13 +115,24 @@ export default function PatientsPage() {
             <Download className="w-3.5 h-3.5 text-[#74778A]" />
             <span>Export CSV</span>
           </button>
-          <button
-            onClick={() => setIsAddModalOpen(true)}
-            className="mira-btn-primary text-xs"
-          >
-            <UserPlus className="w-4 h-4" />
-            <span>New Enquiry</span>
-          </button>
+          {perms.canAddPatient ? (
+            <button
+              onClick={() => setIsAddModalOpen(true)}
+              className="mira-btn-primary text-xs cursor-pointer"
+            >
+              <UserPlus className="w-4 h-4" />
+              <span>New Patient Intake</span>
+            </button>
+          ) : (
+            <button
+              disabled
+              className="px-3 py-2 rounded-lg bg-[#F8F8FC] border border-[#DFDEEB] text-xs font-medium text-[#9699AA] cursor-not-allowed flex items-center gap-1.5"
+              title={`Patient intake locked for ${perms.label}`}
+            >
+              <Lock className="w-3.5 h-3.5 text-[#9699AA]" />
+              <span>Intake Locked ({perms.label})</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -253,17 +266,19 @@ export default function PatientsPage() {
                         >
                           <Eye className="w-3.5 h-3.5" />
                         </button>
-                        <button
-                          onClick={() => {
-                            if (confirm(`Remove record for ${patient.name}?`)) {
-                              deletePatient(patient.id);
-                            }
-                          }}
-                          className="p-1.5 rounded-lg border border-[#DFDEEB] text-[#74778A] hover:bg-rose-50 hover:text-rose-600 transition"
-                          title="Delete Record"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        {perms.canDeletePatient && (
+                          <button
+                            onClick={() => {
+                              if (confirm(`Remove record for ${patient.name}?`)) {
+                                deletePatient(patient.id);
+                              }
+                            }}
+                            className="p-1.5 rounded-lg border border-[#DFDEEB] text-[#74778A] hover:bg-rose-50 hover:text-rose-600 transition cursor-pointer"
+                            title="Super Admin: Delete Record"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
