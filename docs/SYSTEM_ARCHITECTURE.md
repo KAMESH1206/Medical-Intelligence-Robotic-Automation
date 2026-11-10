@@ -36,3 +36,4 @@
 1. **Zero Real PHI:** All demonstration patient profiles are synthetic records using reserved test numbers.
 2. **Clinical Guardrails:** Automated rejection of medical diagnoses or prescription changes; emergency language triggers instant escalation to Australian emergency services (`000`).
 3. **Idempotency & Deduplication:** All robotic workflows employ idempotency checks to prevent duplicate booking confirmations or repeated external alerts.
+

@@ -26,3 +26,4 @@
 | **TC-08** | Emergency clinical language triage | Prompts emergency escalation notice (000 alert) | Alert displayed | **PASS** |
 | **TC-09** | Public provider directory collection job | Scrapes and normalizes clinic metadata with source tracking | Recorded | **PASS** |
 | **TC-10** | Role-based switching (Admin to Viewer) | Operator role switches and reflects in audit log | Logged | **PASS** |
+

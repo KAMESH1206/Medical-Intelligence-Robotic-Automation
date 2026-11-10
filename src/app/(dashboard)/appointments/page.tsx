@@ -206,17 +206,16 @@ export default function AppointmentsPage() {
                     </td>
                     <td>
                       <span
-                        className={`mira-badge ${
-                          apt.status === "confirmed"
+                        className={`mira-badge ${apt.status === "confirmed"
                             ? "mira-badge-green"
                             : apt.status === "requested"
-                            ? "mira-badge-blue"
-                            : apt.status === "pending_approval"
-                            ? "mira-badge-peach"
-                            : apt.status === "cancelled"
-                            ? "mira-badge-red"
-                            : "mira-badge-gray"
-                        }`}
+                              ? "mira-badge-blue"
+                              : apt.status === "pending_approval"
+                                ? "mira-badge-peach"
+                                : apt.status === "cancelled"
+                                  ? "mira-badge-red"
+                                  : "mira-badge-gray"
+                          }`}
                       >
                         {apt.status.replace("_", " ")}
                       </span>

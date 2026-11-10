@@ -81,3 +81,4 @@ Immutable audit records for compliance and traceability.
 | `resource_id` | String | Nullable | Target ID |
 | `details` | JSON | Nullable | Operation metadata |
 | `timestamp` | DateTime | Default: UTC | Event timestamp |
+

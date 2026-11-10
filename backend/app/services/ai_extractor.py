@@ -86,3 +86,4 @@ def extract_entities(text: str, version: int = 3) -> Dict[str, Any]:
             "processing_ms": duration_ms + 60,
             "confidence": data["overallConfidence"]
         }
+

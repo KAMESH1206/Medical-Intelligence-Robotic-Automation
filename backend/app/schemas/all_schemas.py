@@ -94,3 +94,4 @@ class ExtractionResponse(BaseModel):
     missing_fields: List[str]
     processing_ms: int
     is_valid_json: bool
+

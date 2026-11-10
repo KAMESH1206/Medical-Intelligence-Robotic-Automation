@@ -95,3 +95,4 @@ class AuditLogModel(Base):
     details = Column(JSON, nullable=True)
     ip_address = Column(String, nullable=True)
     timestamp = Column(DateTime, default=datetime.utcnow)
+

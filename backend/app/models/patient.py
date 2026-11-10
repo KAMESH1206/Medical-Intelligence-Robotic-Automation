@@ -20,3 +20,4 @@ class PatientModel(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     is_demo_data = Column(Boolean, default=True)
+

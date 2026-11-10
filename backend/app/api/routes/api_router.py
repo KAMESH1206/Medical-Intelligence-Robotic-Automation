@@ -139,3 +139,4 @@ def run_provider_collection(source_url: str = "https://healthengine.com.au/direc
 @router.post("/ai/extract")
 def extract_intake(request: ExtractionRequest):
     return extract_entities(request.text, version=request.prompt_version)
+

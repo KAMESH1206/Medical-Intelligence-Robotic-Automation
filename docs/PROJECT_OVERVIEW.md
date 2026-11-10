@@ -48,3 +48,4 @@ MIRA Ops Intelligence solves these challenges through an integrated suite of 6 c
 - **Secondary Surface:** Soft Lavender White (`#E9E8F8`) — Section backgrounds, cards, modal backdrops
 - **Accent Color:** Warm Sunset Peach (`#F5B69E`) — Notifications, review alerts, KPI accents
 - **Base Surfaces:** Pure White (`#FFFFFF`) on Soft Background (`#F8F8FC`)
+

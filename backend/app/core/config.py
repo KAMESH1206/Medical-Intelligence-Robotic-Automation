@@ -1,6 +1,15 @@
 import os
 from typing import List, Union
-from pydantic_settings import BaseSettings
+
+try:
+    from pydantic_settings import BaseSettings
+except ImportError:
+    try:
+        from pydantic import BaseSettings
+    except ImportError:
+        from pydantic import BaseModel
+        class BaseSettings(BaseModel):
+            pass
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "MIRA Ops Intelligence"
@@ -30,3 +39,4 @@ class Settings(BaseSettings):
         env_file = ".env"
 
 settings = Settings()
+

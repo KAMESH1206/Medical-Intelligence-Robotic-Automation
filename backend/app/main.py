@@ -101,3 +101,4 @@ def root():
         "documentation": "/docs",
         "health": "/api/health"
     }
+

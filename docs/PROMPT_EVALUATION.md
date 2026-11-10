@@ -21,3 +21,4 @@ Evaluated across a synthetic test suite of 100 Australian clinical intake scenar
 1. **Tradeoff Analysis:** While Prompt V3 incurs slightly higher token usage (+235 tokens) and latency (+290ms), the **+79.8% gain in JSON validity** and **near-zero hallucination rate** are non-negotiable prerequisites for healthcare data pipelines.
 2. **Confidence-Driven Human Handoff:** Prompt V3 outputs individual field-level confidence scores. This enables the workflow engine to bypass human review for 90%+ high-confidence records while safely flagging only ambiguous records for staff review.
 3. **Safety Guardrail Integration:** Incorporating emergency keyword triggers directly into the extraction directive ensures life-critical communication is escalated immediately without waiting for standard batch processing.
+
