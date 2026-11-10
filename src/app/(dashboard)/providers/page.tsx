@@ -143,13 +143,13 @@ export default function ProvidersPage() {
       {/* Filter Bar */}
       <div className="p-4 rounded-xl bg-white border border-[#DFDEEB] shadow-xs flex items-center justify-between gap-3 text-xs">
         <div className="relative flex-1 max-w-md">
-          <Search className="w-4 h-4 text-[#9699AA] absolute left-3 top-2.5" />
+          <Search className="w-4 h-4 text-[#9699AA] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
             placeholder="Search providers by clinic, practitioner, suburb, state..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="mira-input pl-9 text-xs"
+            className="mira-input mira-input-search text-xs"
           />
         </div>
         <span className="text-xs text-[#74778A] font-medium">

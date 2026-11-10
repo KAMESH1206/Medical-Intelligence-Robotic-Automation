@@ -222,6 +222,9 @@ body {
 .mira-input::placeholder {
   color: var(--color-subtle);
 }
+.mira-input-search {
+  padding-left: 40px !important;
+}
 
 .mira-label {
   font-size: 13px;

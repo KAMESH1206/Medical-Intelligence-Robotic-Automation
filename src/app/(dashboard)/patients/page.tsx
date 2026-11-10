@@ -142,13 +142,13 @@ export default function PatientsPage() {
       <div className="p-4 rounded-xl bg-white border border-[#DFDEEB] shadow-xs flex flex-wrap items-center justify-between gap-3 text-xs">
         <div className="flex items-center gap-2 flex-1 min-w-[240px]">
           <div className="relative flex-1">
-            <Search className="w-4 h-4 text-[#9699AA] absolute left-3 top-2.5" />
+            <Search className="w-4 h-4 text-[#9699AA] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               placeholder="Search by patient name, ID, email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="mira-input pl-9 text-xs"
+              className="mira-input mira-input-search text-xs"
             />
           </div>
         </div>
