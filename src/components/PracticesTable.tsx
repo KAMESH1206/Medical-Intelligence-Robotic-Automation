@@ -296,7 +296,7 @@ export default function PracticesTable({ practices }: Props) {
             <div>
               <span className="text-xs text-gray-400 uppercase tracking-wider">Services</span>
               <div className="flex flex-wrap gap-1 mt-1">
-                {selectedPractice.services?.map((s) => (
+                {selectedPractice.services?.map((s: string) => (
                   <span
                     key={s}
                     className="px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs"
@@ -417,3 +417,4 @@ export default function PracticesTable({ practices }: Props) {
     </div>
   );
 }
+

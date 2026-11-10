@@ -52,3 +52,4 @@ export function computeStats(practices: Practice[]) {
   const highFit = practices.filter((p) => (p.fitScore ?? 0) >= 70).length;
   return { total, avgScore, contacted, replied, highFit };
 }
+

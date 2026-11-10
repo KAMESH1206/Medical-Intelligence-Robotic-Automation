@@ -1,26 +1,274 @@
 @import "tailwindcss";
 
-body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+/* ============================================
+   MIRA Ops Intelligence — Design System
+   Official Brand Palette
+   ============================================ */
+
+:root {
+  /* Brand Colors */
+  --color-primary: #8DB9F0;        /* Powder Blue */
+  --color-primary-dark: #6BA3E8;   /* Darker Powder Blue for text */
+  --color-primary-light: #C5DBFA;  /* Light Powder Blue */
+  --color-secondary: #E9E8F8;      /* Soft Lavender White */
+  --color-accent: #F5B69E;         /* Warm Sunset Peach */
+  --color-accent-dark: #EE9478;    /* Darker Peach */
+
+  /* Neutrals */
+  --color-background: #F8F8FC;
+  --color-surface: #FFFFFF;
+  --color-text: #25283A;
+  --color-muted: #74778A;
+  --color-subtle: #9699AA;
+  --color-border: #DFDEEB;
+
+  /* Semantic */
+  --color-success: #248A63;
+  --color-warning: #D99035;
+  --color-error: #D65B62;
+  --color-info: #8DB9F0;
+
+  /* Sidebar */
+  --sidebar-width: 256px;
+  --sidebar-collapsed: 72px;
+  --topnav-height: 60px;
 }
 
-/* Smooth scrolling */
+/* ============================================
+   BASE STYLES
+   ============================================ */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 html {
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+body {
+  background-color: var(--color-background);
+  color: var(--color-text);
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
-::-webkit-scrollbar-track {
-  background: #f1f5f9;
+
+/* ============================================
+   SCROLLBAR
+   ============================================ */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--color-background); }
+::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-muted); }
+
+/* ============================================
+   TAILWIND THEME TOKENS
+   ============================================ */
+@theme inline {
+  --color-brand-primary: var(--color-primary);
+  --color-brand-secondary: var(--color-secondary);
+  --color-brand-accent: var(--color-accent);
+  --color-brand-bg: var(--color-background);
+  --color-brand-surface: var(--color-surface);
+  --color-brand-text: var(--color-text);
+  --color-brand-muted: var(--color-muted);
+  --color-brand-border: var(--color-border);
+  --color-brand-success: var(--color-success);
+  --color-brand-warning: var(--color-warning);
+  --color-brand-error: var(--color-error);
 }
-::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 3px;
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+.mira-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 20px;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+
+.mira-card-sm {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.mira-btn-primary {
+  background-color: var(--color-primary);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 18px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.mira-btn-primary:hover {
+  background-color: var(--color-primary-dark);
+}
+.mira-btn-primary:active {
+  transform: scale(0.98);
+}
+.mira-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.mira-btn-secondary {
+  background-color: var(--color-secondary);
+  color: var(--color-primary-dark);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 8px 18px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.mira-btn-secondary:hover {
+  background-color: #DDDCF5;
+}
+
+.mira-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.mira-badge-blue { background: #DDEEFF; color: var(--color-primary-dark); }
+.mira-badge-peach { background: #FEE9E0; color: var(--color-accent-dark); }
+.mira-badge-green { background: #D6F5EC; color: var(--color-success); }
+.mira-badge-yellow { background: #FFF3DC; color: var(--color-warning); }
+.mira-badge-red { background: #FDDCDE; color: var(--color-error); }
+.mira-badge-gray { background: #F0F0F5; color: var(--color-muted); }
+
+/* ============================================
+   PAGE TRANSITION
+   ============================================ */
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.page-enter {
+  animation: fadeSlideIn 0.25s ease forwards;
+}
+
+/* ============================================
+   TABLE STYLES
+   ============================================ */
+.mira-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.mira-table th {
+  text-align: left;
+  padding: 10px 16px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-muted);
+  background: var(--color-background);
+  border-bottom: 1px solid var(--color-border);
+}
+.mira-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text);
+}
+.mira-table tr:last-child td {
+  border-bottom: none;
+}
+.mira-table tr:hover td {
+  background: var(--color-background);
+}
+
+/* ============================================
+   FORM STYLES
+   ============================================ */
+.mira-input {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--color-text);
+  background: var(--color-surface);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.mira-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(141, 185, 240, 0.2);
+}
+.mira-input::placeholder {
+  color: var(--color-subtle);
+}
+
+.mira-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text);
+  margin-bottom: 6px;
+  display: block;
+}
+
+/* ============================================
+   LOADING SPINNER
+   ============================================ */
+@keyframes spin { to { transform: rotate(360deg); } }
+.mira-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+
+/* ============================================
+   SIDEBAR
+   ============================================ */
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-muted);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  text-decoration: none;
+}
+.sidebar-link:hover {
+  background: var(--color-secondary);
+  color: var(--color-text);
+}
+.sidebar-link.active {
+  background: var(--color-primary);
+  color: #FFFFFF;
+}
+.sidebar-link.active svg {
+  color: #FFFFFF;
 }

@@ -1,139 +1,98 @@
-# MediLead AI 🏥🤖
+# MIRA Ops Intelligence 🏥⚡🤖
 
-**AI-powered healthcare practice lead intelligence platform for Australia**
+**Healthcare Data Intelligence & Robotic Workflow Automation SaaS Platform**
 
-Built with Next.js 16, Claude AI (Anthropic), TypeScript, Tailwind CSS, and Recharts.
-
----
-
-## What It Does
-
-MediLead AI helps healthcare technology sales teams:
-
-1. **Discover** Australian medical practices across all 8 states/territories
-2. **Score** each practice 0–100 using Claude AI based on automation readiness (team size, services, telehealth, bulk billing)
-3. **Draft** personalised outreach emails with one click — Claude writes a unique email per practice
-4. **Track** pipeline status (New → Contacted → Replied → Not Interested)
-5. **Analyse** with real-time charts (score distribution, pipeline status, state breakdown)
-6. **Ask** questions in natural language via the AI chat assistant (floating 🤖 button)
+> **Important Positioning Notice:**  
+> This application is an independent healthcare technology prototype inspired by publicly described healthcare automation and administrative workflow challenges. It is **not** an official Gokul Infocare product, and must never be represented as an implementation of its proprietary MIRA platform. The application is developed to demonstrate practical AI engineering, prompt engineering, Python programming, data intelligence, workflow automation, and full-stack development capabilities.
 
 ---
 
-## Tech Stack
+## 🎨 Mandatory Brand Identity & Color System
+The entire application strictly follows the required healthcare color palette:
+- **Primary Color:** Powder Blue (`#8DB9F0`) — Primary actions, active navigation, indicators
+- **Secondary Surface:** Soft Lavender White (`#E9E8F8`) — Section backgrounds, cards, modal surfaces
+- **Accent Color:** Warm Sunset Peach (`#F5B69E`) — Notifications, review alerts, KPI accents
+- **Supporting Neutrals:** White (`#FFFFFF`), Text (`#25283A`), Muted Text (`#74778A`), Border (`#DFDEEB`)
+
+---
+
+## 🚀 Key Modules & Capabilities
+
+1. **Operations Command Center (`/dashboard`)**  
+   Real-time operational metrics: Patient enquiries, OCR documents processed, pending reviews, duplicate candidates, and robotic automation success rates.
+2. **AI Patient Intake Automation (`/patients`)**  
+   Intake form parsing, automatic data quality scoring (0–100), and missing field identification.
+3. **Healthcare Document Intelligence (`/documents`)**  
+   Drag-and-drop PDF/image upload, OCR parsing, field confidence indicators, JSON inspection, and human approval/rejection.
+4. **Healthcare Data Quality Engine (`/data-quality`)**  
+   Continuous format validation, duplicate candidate clustering with similarity matching, and human authorization safeguards.
+5. **Smart Appointment Operations (`/appointments`)**  
+   Calendar/list appointment management with automatic clinic scheduling conflict prevention.
+6. **Healthcare Provider Intelligence (`/providers`)**  
+   Australian public directory scraper (HealthEngine/HotDoc) with rate limiting, source URL tracking, and CSV export.
+7. **AI Administrative Assistant (`/ai-assistant`)**  
+   Operational chat assistant with clinical safety guardrails (emergency `000` notice, strict administrative advice only).
+8. **Intelligent Workflow Automation (`/automation`)**  
+   Multi-step robotic execution engine with trigger pipelines and execution history.
+9. **Operations Analytics & Reports (`/analytics`)**  
+   Cross-department throughput charts, accuracy curves, and CSV export.
+10. **Prompt Engineering Evaluation Lab (`/prompt-lab`)**  
+    Empirical benchmark comparing **Prompt V1** (Naive), **Prompt V2** (Schema JSON), and **Prompt V3** (Enterprise Guardrail with field-level confidence).
+11. **Security & Audit Trail (`/audit-logs`)**  
+    Immutable event logs adhering to the Australian Privacy Principles and HIPAA Security guidelines.
+12. **System Settings (`/settings`)**  
+    Role-based access control tiering, AI provider key management, and one-click demo data reset.
+
+---
+
+## 🛠️ Technology Stack
 
 | Layer | Technology |
 |---|---|
-| Framework | Next.js 16 (App Router, Turbopack) |
-| AI | Anthropic Claude 3 Haiku |
-| Styling | Tailwind CSS v4 |
-| Charts | Recharts |
-| Types | TypeScript 5 |
-| Validation | Zod |
-| Deployment | Vercel |
+| **Frontend Framework** | Next.js 16 (App Router, Turbopack, React 19) |
+| **Language & Styling** | TypeScript 5, Tailwind CSS v4, Lucide React |
+| **Data Visualizations** | Recharts (Area, Bar, Pie, Line) |
+| **Backend API** | Python 3.12+ / 3.13, FastAPI, Pydantic, SQLAlchemy |
+| **Database** | PostgreSQL (Supabase Compatible) / SQLite 3 Local |
+| **AI Foundation** | Anthropic Claude 3 Haiku / OpenAI GPT-4o |
+| **Document Processing** | PyMuPDF, Tesseract OCR, Pillow |
+| **Web Scraping** | Requests, BeautifulSoup4 (Rate-limited, Public records only) |
 
 ---
 
-## Project Structure
+## 🏃 Quick Start Guide
 
-```
-src/
-├── app/
-│   ├── page.tsx              # Dashboard (Server Component)
-│   ├── layout.tsx            # Root layout
-│   └── api/
-│       ├── score/route.ts    # POST – AI fit-score (Claude)
-│       ├── draft/route.ts    # POST – AI email draft (Claude)
-│       └── chat/route.ts     # POST – AI assistant (Claude)
-├── components/
-│   ├── StatsCards.tsx        # 5 KPI summary cards
-│   ├── PracticesTable.tsx    # Interactive table + detail panel
-│   ├── Charts.tsx            # Score / status / state charts
-│   └── AIChatPanel.tsx       # Floating AI chat widget
-├── lib/
-│   ├── types.ts              # TypeScript types
-│   ├── claude.ts             # Anthropic client singleton
-│   ├── prompts.ts            # All AI prompts (versioned)
-│   └── utils.ts              # Helpers, badge colours, stats
-data/
-└── practices.json            # 10 sample AU practices
-```
-
----
-
-## Getting Started
-
-### 1. Install dependencies
-
+### 1. Frontend Setup
 ```bash
 npm install
-```
-
-### 2. Add your Anthropic API key
-
-Create `.env.local`:
-
-```
-ANTHROPIC_API_KEY=sk-ant-...
-```
-
-Get a key at [console.anthropic.com](https://console.anthropic.com). Add a small credit (\$5 is plenty for demos).
-
-### 3. Run the dev server
-
-```bash
 npm run dev
+# Open http://localhost:3000 in your browser
 ```
 
-Open [http://localhost:3000](http://localhost:3000)
-
----
-
-## Features in Detail
-
-### AI Fit Score
-Click **AI Score** on any practice row → Claude analyses team size, services, telehealth, bulk billing, and specialties → returns 0–100 score + 2-sentence reason displayed in the detail panel.
-
-### AI Email Draft
-Click **Draft Email** → Claude writes a personalised 150-word outreach email with the practice's name, suburb, and specific pain points. Copy to clipboard with one click.
-
-### AI Chat Assistant
-Click the 🤖 floating button → ask in plain English:
-- *"Which state has the most practices?"*
-- *"List practices with score above 70"*
-- *"Who should I contact first?"*
-
-### Pipeline Tracking
-Change status (New / Contacted / Replied / Not Interested) inline in the table. Status updates reflect instantly in the charts.
-
----
-
-## AI Prompt Log
-
-| # | Purpose | Model | Tokens |
-|---|---|---|---|
-| 1 | Fit-score analysis | claude-3-haiku | ~300 |
-| 2 | Personalised email draft | claude-3-haiku | ~500 |
-| 3 | Chat assistant system prompt | claude-3-haiku | ~600 |
-
-See [`src/lib/prompts.ts`](src/lib/prompts.ts) for full prompt source.
-
----
-
-## Deployment (Vercel)
-
+### 2. Backend Setup
 ```bash
-npx vercel --prod
+cd backend
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
+# OpenAPI Swagger docs at http://localhost:8000/docs
 ```
 
-Add `ANTHROPIC_API_KEY` in Vercel environment variables.
+### 3. Run Backend Test Suite
+```bash
+cd backend
+python tests/run_tests.py
+```
 
 ---
 
-## Why This Project
-
-Healthcare AI automation is a high-growth sector in Australia. Practices managing 5–15 practitioners spend 30–40% of admin time on scheduling, referrals, billing, and patient follow-ups — all automatable with AI. This tool demonstrates:
-
-- Real-world AI API integration (not fake/hardcoded)
-- Production-quality Next.js architecture
-- Domain knowledge of Australian healthcare
-- End-to-end sales workflow thinking
+## 📑 Comprehensive Documentation Links
+- [Project Overview](docs/PROJECT_OVERVIEW.md)
+- [System Architecture](docs/SYSTEM_ARCHITECTURE.md)
+- [Database Schema](docs/DATABASE_SCHEMA.md)
+- [API Documentation](docs/API_DOCUMENTATION.md)
+- [AI Prompt Documentation](docs/AI_PROMPT_DOCUMENTATION.md)
+- [Prompt Evaluation Report](docs/PROMPT_EVALUATION.md)
+- [Testing & QA Report](docs/TESTING_REPORT.md)
+- [Deployment Guide](docs/DEPLOYMENT_GUIDE.md)
+- [Security & Privacy Guide](docs/SECURITY_AND_PRIVACY.md)
+- [Video Presentation Script](docs/VIDEO_PRESENTATION_SCRIPT.md)

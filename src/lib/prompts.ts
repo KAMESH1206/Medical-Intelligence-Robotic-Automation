@@ -70,3 +70,4 @@ ${practicesJson}
 
 Today's date: ${new Date().toLocaleDateString("en-AU", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}`;
 }
+

@@ -38,3 +38,4 @@ export async function POST(request: Request) {
     return Response.json({ error: "Failed to draft email" }, { status: 500 });
   }
 }
+

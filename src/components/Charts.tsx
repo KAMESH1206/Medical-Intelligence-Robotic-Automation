@@ -123,3 +123,4 @@ export default function Charts({ practices }: Props) {
     </div>
   );
 }
+
