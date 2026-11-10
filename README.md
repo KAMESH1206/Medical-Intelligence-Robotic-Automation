@@ -96,4 +96,16 @@ python tests/run_tests.py
 - [Deployment Guide](docs/DEPLOYMENT_GUIDE.md)
 - [Security & Privacy Guide](docs/SECURITY_AND_PRIVACY.md)
 - [Video Presentation Script](docs/VIDEO_PRESENTATION_SCRIPT.md)
-"# Medical-Intelligence-Robotic-Automation" 
+- [Interview Q&A Cheatsheet](docs/INTERVIEW_QA_CHEATSHEET.md)
+
+---
+
+## 🔐 Operator Demo Accounts
+
+| Role | Email | Password | Privileges |
+|---|---|---|---|
+| **Super Admin** | `admin@miraops.health` | `mira2026!` | Full administrative controls, prompt tuning & security audit logs |
+| **Healthcare Administrator** | `sarah.mitchell@miraops.health` | `mira2026!` | Clinical intake, referrals, document approvals |
+| **Data Coordinator** | `coordinator@miraops.health` | `mira2026!` | Data quality validation, deduplication, provider directory |
+| **Operations Executive** | `ops.lead@miraops.health` | `mira2026!` | Workflow triggers, scheduling analytics, performance reports |
+| **Auditor Guest** | `viewer@miraops.health` | `mira2026!` | Read-only compliance & audit inspections |

@@ -31,6 +31,17 @@ import { DEFAULT_USER } from "./constants";
 
 interface MiraStoreContextType {
   currentUser: User;
+  isAuthenticated: boolean;
+  isAuthLoading: boolean;
+  login: (email: string, password?: string) => Promise<{ success: boolean; error?: string }>;
+  signup: (data: {
+    name: string;
+    email: string;
+    password: string;
+    role: Role;
+    organization?: string;
+  }) => Promise<{ success: boolean; error?: string }>;
+  logout: () => Promise<void>;
   setRole: (role: Role) => void;
   // Patients
   patients: Patient[];
@@ -76,6 +87,8 @@ const STORAGE_KEY = "mira_ops_store_v1";
 
 export function MiraStoreProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User>(DEFAULT_USER);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
+  const [isAuthLoading, setIsAuthLoading] = useState<boolean>(true);
   const [patients, setPatients] = useState<Patient[]>(SEED_PATIENTS);
   const [documents, setDocuments] = useState<Document[]>(SEED_DOCUMENTS);
   const [appointments, setAppointments] = useState<Appointment[]>(SEED_APPOINTMENTS);
@@ -124,6 +137,22 @@ export function MiraStoreProvider({ children }: { children: React.ReactNode }) {
   // Initialize from localStorage if present
   useEffect(() => {
     try {
+      const isLoggedOut = localStorage.getItem("mira_logged_out") === "true";
+      const savedUser = localStorage.getItem("mira_auth_user");
+      if (savedUser && !isLoggedOut) {
+        const u = JSON.parse(savedUser);
+        if (u && u.email) {
+          setCurrentUser(u);
+          setIsAuthenticated(true);
+        }
+      } else if (isLoggedOut) {
+        setIsAuthenticated(false);
+      } else {
+        // Initial session defaults to demo doctor
+        setIsAuthenticated(true);
+        localStorage.setItem("mira_auth_user", JSON.stringify(DEFAULT_USER));
+      }
+
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
@@ -140,8 +169,99 @@ export function MiraStoreProvider({ children }: { children: React.ReactNode }) {
       }
     } catch {
       // fallback to initial state
+    } finally {
+      setIsAuthLoading(false);
     }
   }, []);
+
+  const login = async (
+    email: string,
+    password?: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        return { success: false, error: data.error || "Authentication failed" };
+      }
+      const u: User = {
+        id: data.user.id,
+        name: data.user.name,
+        email: data.user.email,
+        role: data.user.role,
+        avatar: data.user.avatar,
+      };
+      setCurrentUser(u);
+      setIsAuthenticated(true);
+      localStorage.removeItem("mira_logged_out");
+      localStorage.setItem("mira_auth_user", JSON.stringify(u));
+      logAudit("user_login", "user", u.id, { email: u.email, role: u.role });
+      return { success: true };
+    } catch (err: unknown) {
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : "Network error occurred",
+      };
+    }
+  };
+
+  const signup = async (data: {
+    name: string;
+    email: string;
+    password: string;
+    role: Role;
+    organization?: string;
+  }): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const result = await res.json();
+      if (!res.ok || !result.success) {
+        return { success: false, error: result.error || "Failed to create account" };
+      }
+      const u: User = {
+        id: result.user.id,
+        name: result.user.name,
+        email: result.user.email,
+        role: result.user.role,
+        avatar: result.user.avatar,
+      };
+      setCurrentUser(u);
+      setIsAuthenticated(true);
+      localStorage.removeItem("mira_logged_out");
+      localStorage.setItem("mira_auth_user", JSON.stringify(u));
+      logAudit("user_login", "user", u.id, {
+        email: u.email,
+        role: u.role,
+        action: "registered_new_account",
+      });
+      return { success: true };
+    } catch (err: unknown) {
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : "Network error occurred",
+      };
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {
+      // ignore
+    }
+    logAudit("user_logout", "user", currentUser.id, { email: currentUser.email });
+    setIsAuthenticated(false);
+    localStorage.setItem("mira_logged_out", "true");
+    localStorage.removeItem("mira_auth_user");
+  };
 
   // Save changes
   const saveState = (updated: Record<string, unknown>) => {
@@ -547,6 +667,11 @@ export function MiraStoreProvider({ children }: { children: React.ReactNode }) {
     <MiraStoreContext.Provider
       value={{
         currentUser,
+        isAuthenticated,
+        isAuthLoading,
+        login,
+        signup,
+        logout,
         setRole,
         patients,
         addPatient,

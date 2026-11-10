@@ -1,16 +1,23 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { MiraStoreProvider } from "@/lib/store";
 
 export const metadata: Metadata = {
-  title: "MediLead AI – Healthcare Practice Intelligence",
+  title: "MIRA Ops Intelligence – Healthcare Operations & Robotic Automation",
   description:
-    "AI-powered platform to identify, score, and reach Australian medical practices ready for automation.",
+    "AI-powered healthcare data intelligence and robotic workflow automation SaaS platform.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en" className="h-full">
-      <body className="min-h-full bg-gray-50 antialiased">{children}</body>
+      <body className="min-h-full bg-[#F8F8FC] antialiased">
+        <MiraStoreProvider>{children}</MiraStoreProvider>
+      </body>
     </html>
   );
 }

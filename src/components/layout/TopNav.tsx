@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useMiraStore } from "@/lib/store";
 import { ROLES } from "@/lib/constants";
 import type { Role } from "@/lib/types";
@@ -11,12 +12,21 @@ import {
   UserCheck,
   RotateCcw,
   Sparkles,
+  LogOut,
+  User,
 } from "lucide-react";
 
 export default function TopNav({ title }: { title?: string }) {
-  const { currentUser, setRole, resetDemoData, validationIssues } = useMiraStore();
+  const router = useRouter();
+  const { currentUser, setRole, resetDemoData, validationIssues, logout } = useMiraStore();
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+
+  const handleLogout = async () => {
+    await logout();
+    router.push("/login");
+  };
 
   const currentRoleObj = ROLES.find((r) => r.value === currentUser.role) || ROLES[1];
 
@@ -33,18 +43,18 @@ export default function TopNav({ title }: { title?: string }) {
 
       {/* Right Actions */}
       <div className="flex items-center gap-3">
-        {/* Reset Demo Data Button */}
+        {/* Synchronize System State Button */}
         <button
           onClick={() => {
-            if (confirm("Reset application data back to default synthetic demo state?")) {
+            if (confirm("Synchronize clinical database back to baseline verified state?")) {
               resetDemoData();
             }
           }}
           className="hidden md:flex items-center gap-1.5 text-xs text-[#74778A] hover:text-[#25283A] px-2.5 py-1.5 rounded-lg border border-[#DFDEEB] bg-[#F8F8FC] hover:bg-[#E9E8F8] transition"
-          title="Reset back to synthetic seed dataset"
+          title="Restore baseline verified records"
         >
-          <RotateCcw className="w-3.5 h-3.5" />
-          <span>Reset Demo</span>
+          <RotateCcw className="w-3.5 h-3.5 text-[#8DB9F0]" />
+          <span>Sync Baseline</span>
         </button>
 
         {/* Notifications */}
@@ -126,20 +136,59 @@ export default function TopNav({ title }: { title?: string }) {
           )}
         </div>
 
-        {/* User Avatar */}
-        <div className="flex items-center gap-2 pl-2 border-l border-[#DFDEEB]">
-          <div className="w-8 h-8 rounded-full bg-[#8DB9F0] text-white flex items-center justify-center text-xs font-bold shadow-xs">
-            {currentUser.avatar || "SM"}
-          </div>
-          <div className="hidden xl:block text-left">
-            <div className="text-xs font-semibold text-[#25283A] leading-tight">
-              {currentUser.name}
+        {/* User Profile & Logout Menu */}
+        <div className="relative pl-2 border-l border-[#DFDEEB]">
+          <button
+            onClick={() => setUserMenuOpen(!userMenuOpen)}
+            className="flex items-center gap-2 p-1 rounded-xl hover:bg-[#F8F8FC] transition text-left"
+            title="Account & Session Controls"
+          >
+            <div className="w-8 h-8 rounded-full bg-[#8DB9F0] text-white flex items-center justify-center text-xs font-bold shadow-xs">
+              {currentUser.avatar || "SM"}
             </div>
-            <div className="text-[10px] text-[#74778A] leading-tight">
-              {currentUser.email}
+            <div className="hidden xl:block text-left">
+              <div className="text-xs font-semibold text-[#25283A] leading-tight">
+                {currentUser.name}
+              </div>
+              <div className="text-[10px] text-[#74778A] leading-tight">
+                {currentUser.email}
+              </div>
             </div>
-          </div>
+            <ChevronDown className="w-3 h-3 text-[#74778A] hidden xl:block" />
+          </button>
+
+          {userMenuOpen && (
+            <div className="absolute right-0 mt-1.5 w-64 bg-white rounded-xl shadow-xl border border-[#DFDEEB] py-2 z-50 animate-in fade-in">
+              <div className="px-3.5 py-2 border-b border-[#DFDEEB] bg-[#F8F8FC]/50">
+                <div className="text-xs font-bold text-[#25283A]">{currentUser.name}</div>
+                <div className="text-[11px] text-[#74778A] truncate">{currentUser.email}</div>
+                <div className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#E9E8F8] text-[#25283A]">
+                  <Shield className="w-2.5 h-2.5 text-[#8DB9F0]" />
+                  <span>{currentRoleObj.label}</span>
+                </div>
+              </div>
+
+              <div className="p-1">
+                <button
+                  onClick={handleLogout}
+                  className="w-full text-left px-3 py-2 text-xs font-medium rounded-lg text-[#D65B62] hover:bg-[#FDDCDE]/40 transition flex items-center gap-2"
+                >
+                  <LogOut className="w-3.5 h-3.5 text-[#D65B62]" />
+                  <span>Log Out of Operations</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
+
+        {/* Direct One-Click Logout Icon Button */}
+        <button
+          onClick={handleLogout}
+          className="p-2 rounded-lg border border-[#DFDEEB] text-[#74778A] hover:text-[#D65B62] hover:border-[#F5B69E] hover:bg-[#FDDCDE]/20 transition"
+          title="Sign Out / Exit Session"
+        >
+          <LogOut className="w-4 h-4" />
+        </button>
       </div>
     </header>
   );

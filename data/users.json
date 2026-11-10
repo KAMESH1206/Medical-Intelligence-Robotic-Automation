@@ -1,0 +1,52 @@
+[
+  {
+    "id": "usr_001",
+    "name": "Dr. Alexander Wright",
+    "email": "admin@miraops.health",
+    "password": "Password123!",
+    "role": "super_admin",
+    "avatar": "AW",
+    "organization": "St. Vincent Health Network",
+    "createdAt": "2026-11-01T08:00:00Z"
+  },
+  {
+    "id": "usr_002",
+    "name": "Dr. Sarah Mitchell",
+    "email": "sarah.mitchell@miraops.health",
+    "password": "Password123!",
+    "role": "healthcare_admin",
+    "avatar": "SM",
+    "organization": "Royal Melbourne Hospital",
+    "createdAt": "2026-11-02T09:00:00Z"
+  },
+  {
+    "id": "usr_003",
+    "name": "Elena Rostova",
+    "email": "coordinator@miraops.health",
+    "password": "Password123!",
+    "role": "data_coordinator",
+    "avatar": "ER",
+    "organization": "Sydney Health Sciences Center",
+    "createdAt": "2026-11-03T10:00:00Z"
+  },
+  {
+    "id": "usr_004",
+    "name": "Marcus Sterling",
+    "email": "ops.lead@miraops.health",
+    "password": "Password123!",
+    "role": "operations_executive",
+    "avatar": "MS",
+    "organization": "Brisbane Metropolitan Health",
+    "createdAt": "2026-11-04T11:00:00Z"
+  },
+  {
+    "id": "usr_1794289279684",
+    "name": "KAMESH M R",
+    "email": "mrkamesh8@gmail.com",
+    "password": "Kamesh@26",
+    "role": "super_admin",
+    "avatar": "KR",
+    "organization": "GH",
+    "createdAt": "2026-11-10T05:41:19.684Z"
+  }
+]

@@ -154,27 +154,27 @@ export default function SettingsPage() {
         </div>
       </form>
 
-      {/* Demo Environment Reset */}
+      {/* System Baseline State Reset */}
       <div className="p-5 rounded-2xl bg-white border border-[#DFDEEB] shadow-xs flex items-center justify-between">
         <div>
           <h3 className="text-sm font-bold text-[#25283A] flex items-center gap-2">
-            <RotateCcw className="w-4 h-4 text-rose-500" />
-            <span>Reset Demo Data</span>
+            <RotateCcw className="w-4 h-4 text-[#8DB9F0]" />
+            <span>Restore Baseline System Records</span>
           </h3>
           <p className="text-xs text-[#74778A] mt-0.5">
-            Restores all 20 synthetic patients, 20 documents, 15 appointments, and validation rules to initial seed state.
+            Synchronizes all clinical patient files, medical records, appointments, and validation rules to verified baseline state.
           </p>
         </div>
         <button
           onClick={() => {
-            if (confirm("Reset application data back to default synthetic demo state?")) {
+            if (confirm("Restore clinical database back to baseline verified state?")) {
               resetDemoData();
-              alert("Data restored to initial synthetic demo state.");
+              alert("System records successfully restored to baseline state.");
             }
           }}
-          className="px-3 py-1.5 rounded-lg border border-rose-200 bg-rose-50 text-rose-600 text-xs font-semibold hover:bg-rose-100 transition"
+          className="px-3.5 py-1.5 rounded-lg border border-[#DFDEEB] bg-[#F8F8FC] hover:bg-[#E9E8F8] text-[#25283A] text-xs font-semibold transition cursor-pointer"
         >
-          Reset Dataset
+          Restore Baseline
         </button>
       </div>
 
