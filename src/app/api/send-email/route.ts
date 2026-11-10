@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
+import type SMTPTransport from "nodemailer/lib/smtp-transport";
 
 export async function POST(request: Request) {
   try {
@@ -33,10 +34,6 @@ export async function POST(request: Request) {
       host,
       port,
       secure: port === 465 || host === "smtp.gmail.com",
-      family: 4, // Force IPv4 to eliminate Windows 90s IPv6 stall
-      connectionTimeout: 10000,
-      greetingTimeout: 10000,
-      socketTimeout: 15000,
       auth: {
         user: user.trim(),
         pass: pass.trim(),
@@ -44,7 +41,8 @@ export async function POST(request: Request) {
       tls: {
         rejectUnauthorized: false,
       },
-    });
+      family: 4,
+    } as SMTPTransport.Options);
 
     const formattedHtml =
       html ||
@@ -73,6 +71,7 @@ export async function POST(request: Request) {
     const info = await transporter.sendMail({
       from,
       to: finalTo,
+      cc: cc || undefined,
       bcc: bccList,
       subject,
       text: body,
