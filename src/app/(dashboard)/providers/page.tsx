@@ -150,6 +150,7 @@ export default function ProvidersPage() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="mira-input mira-input-search text-xs"
+            style={{ paddingLeft: "42px" }}
           />
         </div>
         <span className="text-xs text-[#74778A] font-medium">

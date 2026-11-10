@@ -108,6 +108,7 @@ export default function AuditLogsPage() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="mira-input mira-input-search text-xs"
+            style={{ paddingLeft: "42px" }}
           />
         </div>
 

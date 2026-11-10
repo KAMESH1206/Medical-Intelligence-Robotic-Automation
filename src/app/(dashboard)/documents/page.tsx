@@ -111,6 +111,7 @@ export default function DocumentsPage() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="mira-input mira-input-search text-xs"
+              style={{ paddingLeft: "42px" }}
             />
           </div>
         </div>
