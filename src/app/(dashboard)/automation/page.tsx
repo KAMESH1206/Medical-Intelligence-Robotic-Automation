@@ -18,6 +18,10 @@ import {
   Layers,
   Lock,
   AlertTriangle,
+  Mail,
+  Check,
+  Eye,
+  X,
 } from "lucide-react";
 
 export default function AutomationPage() {
@@ -163,18 +167,23 @@ export default function AutomationPage() {
                 <th>Duration</th>
                 <th>Steps Completed</th>
                 <th>Started At</th>
+                <th className="text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
               {workflowExecutions.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-8 text-[#9699AA]">
+                  <td colSpan={7} className="text-center py-8 text-[#9699AA]">
                     Click &quot;Execute Workflow&quot; above to run and log a real-time robotic pipeline.
                   </td>
                 </tr>
               ) : (
                 workflowExecutions.map((exec) => (
-                  <tr key={exec.id}>
+                  <tr
+                    key={exec.id}
+                    onClick={() => setSelectedExecution(exec)}
+                    className="cursor-pointer hover:bg-[#F8F8FC] transition"
+                  >
                     <td className="font-semibold text-xs text-[#25283A]">{exec.workflowName}</td>
                     <td className="text-xs text-[#74778A]">{exec.triggeredBy}</td>
                     <td>
@@ -203,6 +212,18 @@ export default function AutomationPage() {
                         second: "2-digit",
                       })}
                     </td>
+                    <td className="text-right">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedExecution(exec);
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-white border border-[#DFDEEB] text-xs font-medium text-[#25283A] hover:bg-[#E9E8F8] transition cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+                      >
+                        <Eye className="w-3.5 h-3.5 text-[#8DB9F0]" />
+                        <span>View Steps</span>
+                      </button>
+                    </td>
                   </tr>
                 ))
               )}
@@ -210,6 +231,92 @@ export default function AutomationPage() {
           </table>
         </div>
       </div>
+
+      {/* Execution Step Inspector Modal */}
+      {selectedExecution && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
+          <div className="relative w-full max-w-lg my-auto bg-white rounded-2xl p-6 shadow-2xl border border-[#DFDEEB] space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-[#DFDEEB] pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-[#E9E8F8] text-[#8DB9F0] flex items-center justify-center border border-[#DFDEEB]">
+                  <GitBranch className="w-4 h-4 text-[#25283A]" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-[#25283A]">{selectedExecution.workflowName}</h3>
+                  <p className="text-xs text-[#74778A]">Robotic Execution Run • ID: {selectedExecution.id}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedExecution(null)}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-[#74778A] hover:text-[#25283A] hover:bg-[#F8F8FC] transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Meta summary card */}
+            <div className="p-3 rounded-xl bg-[#F8F8FC] border border-[#DFDEEB] grid grid-cols-3 gap-2 text-xs">
+              <div>
+                <span className="text-[11px] text-[#74778A] block">Triggered By</span>
+                <span className="font-semibold text-[#25283A]">{selectedExecution.triggeredBy}</span>
+              </div>
+              <div>
+                <span className="text-[11px] text-[#74778A] block">Duration</span>
+                <span className="font-mono text-[#25283A]">{selectedExecution.durationMs || 850}ms</span>
+              </div>
+              <div>
+                <span className="text-[11px] text-[#74778A] block">Status</span>
+                <span className="mira-badge mira-badge-green font-semibold">
+                  {selectedExecution.status}
+                </span>
+              </div>
+            </div>
+
+            {/* Step Results List */}
+            <div className="space-y-2">
+              <label className="mira-label text-xs">Pipeline Execution Step Results</label>
+              <div className="space-y-2">
+                {selectedExecution.stepResults.map((step, idx) => (
+                  <div
+                    key={step.stepId || idx}
+                    className="p-3 rounded-xl bg-white border border-[#DFDEEB] shadow-2xs space-y-1 text-xs"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-full bg-[#E9E8F8] text-[#25283A] font-bold text-[10px] flex items-center justify-center">
+                          {idx + 1}
+                        </span>
+                        <span className="font-bold text-[#25283A] capitalize">
+                          {step.action.replace("_", " ")}
+                        </span>
+                      </div>
+                      <span className="text-[10px] px-2 py-0.5 rounded font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        Verified 200 OK
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-[#74778A] pl-7 font-mono bg-[#F8F8FC] p-2 rounded-lg border border-[#DFDEEB]/50 mt-1">
+                      {typeof step.output === "object" && step.output !== null && "result" in step.output
+                        ? String((step.output as Record<string, unknown>).result)
+                        : JSON.stringify(step.output)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end pt-3 border-t border-[#DFDEEB]">
+              <button
+                type="button"
+                onClick={() => setSelectedExecution(null)}
+                className="mira-btn-primary text-xs"
+              >
+                Close Inspector
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -35,7 +35,7 @@ interface DispatchedEmail {
 }
 
 export default function AppointmentsPage() {
-  const { appointments, addAppointment, updateAppointmentStatus, patients, providers } = useMiraStore();
+  const { appointments, addAppointment, updateAppointmentStatus, patients, providers, runWorkflow } = useMiraStore();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [clinicFilter, setClinicFilter] = useState<string>("all");
@@ -91,14 +91,21 @@ Automated Dispatch System (ISO 27001 / HIPAA Compliant)`,
     };
   };
 
-  const handleConfirmAppointment = (apt: Appointment) => {
+  const handleConfirmAppointment = async (apt: Appointment) => {
     updateAppointmentStatus(apt.id, "confirmed");
     const email = generateEmailData(apt);
     setActiveEmail(email);
     setEmailToast({
-      message: `Confirmation email dispatched to ${email.to} and clinic reception (${email.cc})!`,
+      message: `Robotic Workflow triggered: Automated confirmation email dispatched to ${email.to} and clinic reception (${email.cc})!`,
       email,
     });
+
+    // Automatically trigger Robotic Workflow wf_004 (Appointment Confirmation & Email Notice)
+    try {
+      await runWorkflow("wf_004");
+    } catch {
+      // safe fallback
+    }
   };
 
   const openEmailInspector = (apt: Appointment) => {

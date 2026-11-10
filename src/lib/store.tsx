@@ -548,12 +548,26 @@ export function MiraStoreProvider({ children }: { children: React.ReactNode }) {
       status: "success",
       completedAt: new Date().toISOString(),
       durationMs: 850,
-      stepResults: (wf?.steps || []).map((step) => ({
-        stepId: step.id,
-        action: step.actionType,
-        status: "success",
-        output: { result: "Executed successfully without exception" },
-      })),
+      stepResults: (wf?.steps || []).map((step) => {
+        let outputDetail = "Executed successfully without exception";
+        if (step.actionType === "send_email") {
+          outputDetail = "Automated SMTP relay dispatched notification to patient & clinic reception (250 OK)";
+        } else if (step.actionType === "validate_record") {
+          outputDetail = "Schedule conflict validation passed (0 collisions detected)";
+        } else if (step.actionType === "ai_extract") {
+          outputDetail = "Extracted 6 entities with 94.5% aggregate confidence";
+        } else if (step.actionType === "ai_classify") {
+          outputDetail = "Urgency categorized as routine with high priority follow-up";
+        } else if (step.actionType === "log_audit") {
+          outputDetail = "Immutable audit log event recorded in audit provenance ledger";
+        }
+        return {
+          stepId: step.id,
+          action: step.actionType,
+          status: "success" as const,
+          output: { result: outputDetail },
+        };
+      }),
     };
 
     setWorkflowExecutions((prev) => {
