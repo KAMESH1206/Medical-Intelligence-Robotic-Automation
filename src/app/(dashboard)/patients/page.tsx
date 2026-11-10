@@ -1,5 +1,7 @@
 "use client";
 
+export const instant = false;
+
 import React, { useState } from "react";
 import { useMiraStore } from "@/lib/store";
 import { CLINIC_LOCATIONS, ENQUIRY_CATEGORIES, ROLE_PERMISSIONS } from "@/lib/constants";

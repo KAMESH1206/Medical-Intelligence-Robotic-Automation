@@ -1,5 +1,7 @@
 "use client";
 
+export const instant = false;
+
 import React, { useState } from "react";
 import { useMiraStore } from "@/lib/store";
 import { ROLE_PERMISSIONS } from "@/lib/constants";
@@ -123,11 +125,10 @@ export default function PromptLabPage() {
             <div
               key={pv.id}
               onClick={() => setSelectedPromptId(pv.id)}
-              className={`p-5 rounded-2xl bg-white border cursor-pointer transition shadow-xs flex flex-col justify-between ${
-                isSelected
+              className={`p-5 rounded-2xl bg-white border cursor-pointer transition shadow-xs flex flex-col justify-between ${isSelected
                   ? "border-[#8DB9F0] ring-2 ring-[#8DB9F0]/20"
                   : "border-[#DFDEEB] hover:border-[#8DB9F0]/50"
-              }`}
+                }`}
             >
               <div>
                 <div className="flex items-center justify-between mb-2">
@@ -199,11 +200,10 @@ export default function PromptLabPage() {
             <button
               onClick={handleExecuteTest}
               disabled={isRunning || !perms.canRunPromptTests}
-              className={`text-xs flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold transition ${
-                perms.canRunPromptTests
+              className={`text-xs flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold transition ${perms.canRunPromptTests
                   ? "bg-[#8DB9F0] text-white hover:bg-[#6BA3E8] cursor-pointer"
                   : "bg-[#F8F8FC] border border-[#DFDEEB] text-[#9699AA] cursor-not-allowed"
-              }`}
+                }`}
               title={
                 !perms.canRunPromptTests
                   ? `Requires Super Admin authorization (Current: ${perms.label})`
@@ -269,9 +269,8 @@ export default function PromptLabPage() {
             </div>
             {latestResult && (
               <span
-                className={`mira-badge ${
-                  latestResult.isValidJson ? "mira-badge-green" : "mira-badge-red"
-                }`}
+                className={`mira-badge ${latestResult.isValidJson ? "mira-badge-green" : "mira-badge-red"
+                  }`}
               >
                 {latestResult.isValidJson ? "Valid JSON Schema" : "Malformed Output"}
               </span>

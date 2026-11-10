@@ -1,5 +1,7 @@
 "use client";
 
+export const instant = false;
+
 import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/layout/Sidebar";

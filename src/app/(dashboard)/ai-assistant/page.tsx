@@ -1,5 +1,7 @@
 "use client";
 
+export const instant = false;
+
 import React, { useState } from "react";
 import { useMiraStore } from "@/lib/store";
 import {
@@ -68,23 +70,41 @@ I can help summarize patient intake queues, draft polite administrative communic
     // Check emergency keywords for Australian healthcare safety guardrail
     const isEmergency = /chest pain|heart attack|stroke|suicide|emergency|bleed profusely|can't breathe/i.test(prompt);
 
-    await new Promise((r) => setTimeout(r, 1000));
-
     let reply = "";
-    if (isEmergency) {
-      reply = `EMERGENCY CLINICAL NOTICE:
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [...messages, userMsg].map((m) => ({
+            role: m.role,
+            content: m.content,
+          })),
+        }),
+      });
+      const data = await res.json();
+      if (data && data.reply) {
+        reply = data.reply;
+      }
+    } catch {
+      // fallback handled below
+    }
+
+    if (!reply) {
+      if (isEmergency) {
+        reply = `EMERGENCY CLINICAL NOTICE:
 The enquiry contains potential medical emergency indicators.
 1. Immediately advise the patient or caller to dial Emergency Services (000 in Australia) or attend the nearest Emergency Department.
 2. Escalate immediately to an on-duty clinician or nursing staff.
 3. MIRA Ops Intelligence does not process emergency clinical triage automatically.`;
-    } else if (prompt.toLowerCase().includes("daily operations") || prompt.toLowerCase().includes("briefing")) {
-      reply = `DAILY OPERATIONS SUMMARY (${new Date().toLocaleDateString("en-AU")}):
+      } else if (prompt.toLowerCase().includes("daily operations") || prompt.toLowerCase().includes("briefing")) {
+        reply = `DAILY OPERATIONS SUMMARY (${new Date().toLocaleDateString("en-AU")}):
 • Active Patient Enquiries: ${patients.length} records in queue.
 • Document Intelligence: ${documents.filter((d) => d.status === "completed").length} processed, ${documents.filter((d) => d.status === "needs_review").length} requiring human validation.
 • Data Quality: ${validationIssues.length} active validation flags.
 • Recommended Action: Review high-priority WorkCover form (doc_017) and confirm 3 pending appointments.`;
-    } else if (prompt.toLowerCase().includes("email") || prompt.toLowerCase().includes("draft")) {
-      reply = `Subject: Important: Additional Details Required for Your Medical Registration
+      } else if (prompt.toLowerCase().includes("email") || prompt.toLowerCase().includes("draft")) {
+        reply = `Subject: Important: Additional Details Required for Your Medical Registration
 
 Dear Patient,
 
@@ -97,11 +117,12 @@ Could you please reply to this email or call our practice at your earliest conve
 Warm regards,
 Administrative Operations Team
 MIRA Ops Healthcare Partner Practice`;
-    } else {
-      reply = `Administrative Analysis:
+      } else {
+        reply = `Administrative Analysis:
 • Request Categorization: Administrative Workflow & Documentation
 • Integrity Assessment: Input analyzed against current clinic operating procedures.
 • Next Steps: All fields match standard Australian healthcare intake guidelines. You can confirm or export this record directly from the Operations Dashboard.`;
+      }
     }
 
     setMessages((prev) => [

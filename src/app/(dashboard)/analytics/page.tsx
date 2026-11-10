@@ -1,5 +1,7 @@
 "use client";
 
+export const instant = false;
+
 import React, { useState } from "react";
 import { useMiraStore } from "@/lib/store";
 import {
