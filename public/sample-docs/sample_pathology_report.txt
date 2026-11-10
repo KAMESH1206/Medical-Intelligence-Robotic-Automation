@@ -1,0 +1,35 @@
+============================================================
+QUEENSLAND CLINICAL PATHOLOGY LABORATORIES
+Accredited Testing Laboratory No. 2049
+45 Riverview Terrace, Brisbane QLD 4000
+============================================================
+
+PATHOLOGY INVESTIGATION REPORT
+
+Patient: Johnson, Liam
+DOB: 23/09/1975 (Male)
+Referring Doctor: Dr. Anita Sharma (Melbourne Health Hub)
+Collection Date: 08/11/2026 08:30 AM
+Report Date: 08/11/2026 02:45 PM
+Lab Reference: QLD-PATH-88291
+
+TEST: GLYCOSYLATED HAEMOGLOBIN (HbA1c)
+Result: 6.8 % [Reference Range: 4.0 - 6.0 %] (Flag: HIGH)
+Estimated Average Glucose: 8.2 mmol/L
+
+LIPID PANEL:
+- Total Cholesterol: 4.9 mmol/L [Normal < 5.5]
+- Triglycerides: 1.6 mmol/L [Normal < 2.0]
+- HDL Cholesterol: 1.2 mmol/L [Normal > 1.0]
+- LDL Cholesterol: 2.9 mmol/L [Normal < 3.0]
+
+FULL BLOOD EXAMINATION:
+- Haemoglobin: 148 g/L [Range: 130 - 180]
+- Platelets: 240 x10^9/L [Range: 150 - 400]
+- White Cell Count: 6.2 x10^9/L [Range: 4.0 - 11.0]
+
+COMMENTS:
+HbA1c indicates suboptimal glycemic control consistent with Type 2 Diabetes Mellitus. Lipid parameters remain within acceptable target thresholds. Clinical review recommended.
+
+Authorised by: Dr. Marcus Vance, FRCPA (Pathologist)
+============================================================

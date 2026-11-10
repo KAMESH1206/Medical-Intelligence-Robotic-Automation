@@ -1,0 +1,44 @@
+============================================================
+METROPOLITAN CARDIOLOGY ASSOCIATES
+Level 4, 124 Macquarie Street, Sydney NSW 2000
+Tel: (02) 9234 1122 | Fax: (02) 9234 1123
+Provider No: 489211A | Dr. Peter Collins, MBBS, FRACP
+============================================================
+
+SPECIALIST MEDICAL REFERRAL LETTER
+
+Date: 10 November 2026
+Urgency: Routine Non-Urgent
+Referring to: Specialist Outpatient Clinic / Allied Health
+
+PATIENT DETAILS:
+Full Name: Watson, Emma
+Date of Birth: 12 April 1988 (Age: 38)
+Gender: Female
+Contact Number: 0412 345 678
+Email: emma.w@example.com
+Medicare Number: [REDACTED FOR DEMONSTRATION]
+Residential Address: 42 Ocean Street, Bondi NSW 2026
+
+CLINICAL SUMMARY & REASON FOR REFERRAL:
+Emma presents today for routine annual review. She reports occasional exertional dyspnea following viral illness 3 weeks ago. Resting blood pressure recorded at 128/82 mmHg. ECG shows normal sinus rhythm.
+
+PAST MEDICAL HISTORY:
+- Mild seasonal asthma (managed with Ventolin prn)
+- No known drug allergies (NKDA)
+
+CURRENT MEDICATIONS:
+- Multivitamin oral daily
+- Salbutamol 100mcg inhaler as required
+
+REQUESTED CLINICAL ACTION:
+1. Exercise stress echocardiogram
+2. Holter monitoring (24-hour) if palpitations persist
+3. Routine specialist consultation and management plan
+
+Thank you for seeing this patient in your practice.
+
+Yours sincerely,
+Dr. Peter Collins, MBBS, FRACP
+Consultant Cardiologist
+============================================================
