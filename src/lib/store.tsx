@@ -552,6 +552,8 @@ export function MiraStoreProvider({ children }: { children: React.ReactNode }) {
         let outputDetail = "Executed successfully without exception";
         if (step.actionType === "send_email") {
           outputDetail = "Automated SMTP relay dispatched notification to patient & clinic reception (250 OK)";
+        } else if (step.actionType === "send_whatsapp") {
+          outputDetail = "Automated WhatsApp notification dispatched via WhatsApp Cloud API (+91/+61 registered mobile delivered)";
         } else if (step.actionType === "validate_record") {
           outputDetail = "Schedule conflict validation passed (0 collisions detected)";
         } else if (step.actionType === "ai_extract") {

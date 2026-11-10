@@ -175,6 +175,8 @@ export type Appointment = {
   id: string;
   patientId: string;
   patientName: string;
+  patientEmail?: string;
+  patientPhone?: string;
   clinicId?: string;
   clinicName?: string;
   preferredDate: string;
@@ -271,6 +273,7 @@ export type WorkflowActionType =
   | "ai_summarize"
   | "ai_extract"
   | "send_email"
+  | "send_whatsapp"
   | "create_task"
   | "validate_record"
   | "log_audit"

@@ -201,3 +201,16 @@ export const ENQUIRY_CATEGORIES = [
   "Health Assessment",
   "Allied Health Services",
 ];
+
+export const SERVICE_TYPES = [
+  "General Consultation",
+  "Specialist Referral",
+  "Telehealth Appointment",
+  "Chronic Disease Management",
+  "Prescription Renewal",
+  "Health Assessment & Screening",
+  "Cardiology Review",
+  "Allied Health / Physiotherapy",
+  "Dental Care Examination",
+  "Pediatric Consultation",
+];

@@ -926,8 +926,8 @@ export const SEED_WORKFLOWS: Workflow[] = [
   },
   {
     id: "wf_004",
-    name: "Appointment Confirmation & Email Notice",
-    description: "Sends patient confirmation email when status becomes 'confirmed'. Checks doctor schedule conflict first.",
+    name: "Appointment Multi-Channel Automated Notification (Email & WhatsApp)",
+    description: "Sends patient confirmation email and automated WhatsApp message when status becomes 'confirmed'. Checks doctor schedule conflict first.",
     trigger: "pending_approval",
     status: "active",
     createdAt: "2026-11-01T00:00:00Z",
@@ -937,7 +937,8 @@ export const SEED_WORKFLOWS: Workflow[] = [
     steps: [
       { id: "s1", order: 1, actionType: "validate_record", config: { checkConflict: true }, retryable: true },
       { id: "s2", order: 2, actionType: "send_email", config: { template: "appointment_confirmed" }, retryable: true },
-      { id: "s3", order: 3, actionType: "log_audit", config: {}, retryable: false },
+      { id: "s3", order: 3, actionType: "send_whatsapp", config: { template: "appointment_whatsapp_alert" }, retryable: true },
+      { id: "s4", order: 4, actionType: "log_audit", config: {}, retryable: false },
     ],
   },
 ];
