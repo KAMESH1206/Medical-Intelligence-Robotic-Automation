@@ -87,7 +87,7 @@ const STORAGE_KEY = "mira_ops_store_v1";
 
 export function MiraStoreProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User>(DEFAULT_USER);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isAuthLoading, setIsAuthLoading] = useState<boolean>(true);
   const [patients, setPatients] = useState<Patient[]>(SEED_PATIENTS);
   const [documents, setDocuments] = useState<Document[]>(SEED_DOCUMENTS);
@@ -140,17 +140,19 @@ export function MiraStoreProvider({ children }: { children: React.ReactNode }) {
       const isLoggedOut = localStorage.getItem("mira_logged_out") === "true";
       const savedUser = localStorage.getItem("mira_auth_user");
       if (savedUser && !isLoggedOut) {
-        const u = JSON.parse(savedUser);
-        if (u && u.email) {
-          setCurrentUser(u);
-          setIsAuthenticated(true);
+        try {
+          const u = JSON.parse(savedUser);
+          if (u && u.email) {
+            setCurrentUser(u);
+            setIsAuthenticated(true);
+          } else {
+            setIsAuthenticated(false);
+          }
+        } catch {
+          setIsAuthenticated(false);
         }
-      } else if (isLoggedOut) {
-        setIsAuthenticated(false);
       } else {
-        // Initial session defaults to demo doctor
-        setIsAuthenticated(true);
-        localStorage.setItem("mira_auth_user", JSON.stringify(DEFAULT_USER));
+        setIsAuthenticated(false);
       }
 
       const saved = localStorage.getItem(STORAGE_KEY);

@@ -17,6 +17,7 @@ import {
   Zap,
   Layers,
   ChevronRight,
+  LogIn,
 } from "lucide-react";
 
 export default function LandingPage() {
@@ -109,10 +110,10 @@ export default function LandingPage() {
               Sign In
             </Link>
             <Link
-              href="/dashboard"
+              href="/login?tab=signup"
               className="mira-btn-primary text-xs shadow-xs"
             >
-              <span>Launch Live Prototype</span>
+              <span>Get Started</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
@@ -137,18 +138,18 @@ export default function LandingPage() {
 
         <div className="flex flex-wrap items-center justify-center gap-3 pt-4">
           <Link
-            href="/dashboard"
+            href="/login?tab=signup"
             className="px-6 py-3 rounded-xl bg-[#8DB9F0] text-white font-semibold text-sm hover:bg-[#6BA3E8] transition shadow-md flex items-center gap-2"
           >
-            <span>Explore Operations Dashboard</span>
+            <span>Create Healthcare Account</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
           <Link
-            href="/prompt-lab"
+            href="/login"
             className="px-6 py-3 rounded-xl bg-[#E9E8F8] text-[#25283A] font-semibold text-sm hover:bg-[#DDDCF5] border border-[#DFDEEB] transition flex items-center gap-2"
           >
-            <FlaskConical className="w-4 h-4 text-[#8DB9F0]" />
-            <span>Prompt Evaluation Lab</span>
+            <LogIn className="w-4 h-4 text-[#8DB9F0]" />
+            <span>Sign In to Portal</span>
           </Link>
         </div>
 
@@ -234,10 +235,10 @@ export default function LandingPage() {
               <span>Privacy by Design & Clinical Guardrails</span>
             </div>
             <h3 className="text-lg font-bold text-[#25283A]">
-              Zero Real PHI in Demo Environment
+              Strict Privacy & Clinical Safety Architecture
             </h3>
             <p className="text-xs text-[#74778A] max-w-xl">
-              Equipped with synthetic Australian healthcare datasets, strict role-based access control, and mandatory human authorization for duplicate resolution.
+              Equipped with isolated clinical datasets, strict role-based access control, and mandatory human authorization for duplicate resolution.
             </p>
           </div>
           <Link
@@ -284,7 +285,8 @@ export default function LandingPage() {
             <Link href="/dashboard" className="hover:text-[#25283A]">Dashboard</Link>
             <Link href="/prompt-lab" className="hover:text-[#25283A]">Prompt Lab</Link>
             <Link href="/settings" className="hover:text-[#25283A]">Settings</Link>
-            <Link href="/login" className="hover:text-[#25283A]">Login</Link>
+            <Link href="/login" className="hover:text-[#25283A]">Sign In</Link>
+            <Link href="/login?tab=signup" className="hover:text-[#25283A]">Create Account</Link>
           </div>
         </div>
         <div className="max-w-6xl mx-auto mt-4 pt-4 border-t border-[#DFDEEB] text-[11px] text-[#9699AA] text-center md:text-left">

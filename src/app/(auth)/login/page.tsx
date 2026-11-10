@@ -31,8 +31,8 @@ function LoginForm() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
 
   // Sign In Form State
-  const [email, setEmail] = useState("admin@miraops.health");
-  const [password, setPassword] = useState("Password123!");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
 
@@ -115,13 +115,6 @@ function LoginForm() {
       setError(res.error || "Failed to create account. Please check details.");
       setLoading(false);
     }
-  };
-
-  // Switch between pre-registered verified staff accounts
-  const selectQuickAccount = (acctEmail: string, acctPass: string) => {
-    setEmail(acctEmail);
-    setPassword(acctPass);
-    setError(null);
   };
 
   return (
@@ -280,47 +273,6 @@ function LoginForm() {
                   </>
                 )}
               </button>
-
-              {/* Verified Staff Roster Quick Access */}
-              <div className="pt-3 border-t border-[#DFDEEB] space-y-2">
-                <div className="text-[11px] font-semibold text-[#74778A] uppercase tracking-wider text-center">
-                  Pre-Configured Medical Personnel
-                </div>
-                <div className="grid grid-cols-2 gap-1.5 text-xs">
-                  <button
-                    type="button"
-                    onClick={() => selectQuickAccount("admin@miraops.health", "Password123!")}
-                    className="p-2 rounded-lg border border-[#DFDEEB] bg-[#F8F8FC] hover:bg-[#E9E8F8] text-left transition cursor-pointer"
-                  >
-                    <div className="font-semibold text-[#25283A] text-[11px] truncate">Dr. Alexander Wright</div>
-                    <div className="text-[10px] text-[#74778A]">Clinical Director</div>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => selectQuickAccount("sarah.mitchell@miraops.health", "Password123!")}
-                    className="p-2 rounded-lg border border-[#DFDEEB] bg-[#F8F8FC] hover:bg-[#E9E8F8] text-left transition cursor-pointer"
-                  >
-                    <div className="font-semibold text-[#25283A] text-[11px] truncate">Dr. Sarah Mitchell</div>
-                    <div className="text-[10px] text-[#74778A]">Healthcare Admin</div>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => selectQuickAccount("coordinator@miraops.health", "Password123!")}
-                    className="p-2 rounded-lg border border-[#DFDEEB] bg-[#F8F8FC] hover:bg-[#E9E8F8] text-left transition cursor-pointer"
-                  >
-                    <div className="font-semibold text-[#25283A] text-[11px] truncate">Elena Rostova</div>
-                    <div className="text-[10px] text-[#74778A]">Data Coordinator</div>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => selectQuickAccount("ops.lead@miraops.health", "Password123!")}
-                    className="p-2 rounded-lg border border-[#DFDEEB] bg-[#F8F8FC] hover:bg-[#E9E8F8] text-left transition cursor-pointer"
-                  >
-                    <div className="font-semibold text-[#25283A] text-[11px] truncate">Marcus Sterling</div>
-                    <div className="text-[10px] text-[#74778A]">Operations Lead</div>
-                  </button>
-                </div>
-              </div>
             </form>
           )}
 

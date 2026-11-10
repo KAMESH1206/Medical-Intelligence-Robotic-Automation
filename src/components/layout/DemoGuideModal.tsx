@@ -6,125 +6,124 @@ import {
   HelpCircle,
   X,
   Sparkles,
-  CheckCircle2,
   ArrowRight,
-  FlaskConical,
-  FileText,
-  Users,
   Shield,
-  GitBranch,
+  Layers,
 } from "lucide-react";
 
 export default function DemoGuideModal() {
   const [isOpen, setIsOpen] = useState(false);
 
-  const demoSteps = [
+  const capabilityModules = [
     {
-      step: "1",
+      num: "01",
       title: "Operations Command Center",
       route: "/dashboard",
-      script: "Highlight 6 KPI cards derived from real records, enquiry volume trends, and real-time audit logs.",
+      desc: "Unified clinical throughput tracking, patient enquiry trends, and real-time security event telemetry.",
     },
     {
-      step: "2",
-      title: "Patient Intake & Quality Score",
+      num: "02",
+      title: "Patient Intake & Quality Governance",
       route: "/patients",
-      script: "Show how missing fields (e.g. phone/email) automatically decrease validation score and flag records for triage.",
+      desc: "Automated format standardization, completeness scoring (0-100), and missing field triage alerts.",
     },
     {
-      step: "3",
-      title: "Document Intelligence & OCR",
+      num: "03",
+      title: "Document Intelligence & OCR Parsing",
       route: "/documents",
-      script: "Demonstrate drag-and-drop OCR, inspection of structured JSON with field-level confidence scores, and human approval gates.",
+      desc: "Multimodal OCR text parsing, structured clinical entity extraction, and mandatory human authorization gates.",
     },
     {
-      step: "4",
-      title: "Prompt Engineering Lab (Core Highlight)",
+      num: "04",
+      title: "Prompt Engineering Evaluation Lab",
       route: "/prompt-lab",
-      script: "Run live extraction test comparing Prompt V1 vs V2 vs V3. Explain the jump from 20% to 99.8% JSON validity.",
+      desc: "Empirical benchmarking of enterprise LLM prompts, validating JSON schema conformance and confidence scores.",
     },
     {
-      step: "5",
-      title: "Robotic Workflows & Role Governance",
+      num: "05",
+      title: "Robotic Workflow Automation Engine",
       route: "/automation",
-      script: "Click 'Execute Workflow' to show robotic task sequence and duration. Then switch role to Viewer in the top bar.",
+      desc: "Orchestrated robotic pipelines for automated clinic scheduling, administrative alerts, and notifications.",
     },
   ];
 
   return (
     <>
-      {/* Floating System Tour Trigger Button */}
+      {/* Floating Operations Reference Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-40 flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#8DB9F0] text-white text-xs font-bold shadow-lg hover:bg-[#6BA3E8] transition-all hover:scale-105 cursor-pointer"
-        title="Open Platform Feature Guide"
+        className="fixed bottom-6 right-6 z-40 flex items-center gap-2 px-3.5 py-2 rounded-full bg-white border border-[#DFDEEB] text-[#25283A] text-xs font-semibold shadow-md hover:bg-[#F8F8FC] hover:border-[#8DB9F0] transition-all cursor-pointer"
+        title="View Platform Capabilities Reference"
       >
-        <Sparkles className="w-4 h-4 text-white" />
-        <span>Platform Guide</span>
+        <HelpCircle className="w-4 h-4 text-[#8DB9F0]" />
+        <span>Operations Guide</span>
       </button>
 
-      {/* Guide Modal */}
+      {/* Operations Reference Modal */}
       {isOpen && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-[#DFDEEB] space-y-4 max-h-[85vh] overflow-y-auto">
             <div className="flex items-start justify-between border-b border-[#DFDEEB] pb-3">
               <div>
                 <div className="flex items-center gap-1.5 text-xs font-bold text-[#8DB9F0] uppercase tracking-wider">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>5-Minute Interview Presentation Walkthrough</span>
+                  <Layers className="w-3.5 h-3.5" />
+                  <span>Platform Architecture & Capabilities</span>
                 </div>
                 <h3 className="text-base font-bold text-[#25283A] mt-0.5">
-                  MIRA Ops Intelligence Live Demo Flow
+                  MIRA Ops Intelligence System Guide
                 </h3>
               </div>
               <button
                 onClick={() => setIsOpen(false)}
-                className="text-gray-400 hover:text-gray-600 font-bold text-lg p-1"
+                className="text-gray-400 hover:text-gray-600 font-bold text-lg p-1 cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             <p className="text-xs text-[#74778A]">
-              Follow this sequence during your interview screen share to demonstrate deep technical mastery:
+              Explore the core clinical automation modules powering MIRA Ops Intelligence:
             </p>
 
             <div className="space-y-2.5">
-              {demoSteps.map((s) => (
+              {capabilityModules.map((m) => (
                 <div
-                  key={s.step}
+                  key={m.num}
                   className="p-3 rounded-xl bg-[#F8F8FC] border border-[#DFDEEB] space-y-1 text-xs"
                 >
                   <div className="flex items-center justify-between">
                     <div className="font-bold text-[#25283A] flex items-center gap-2">
                       <span className="w-5 h-5 rounded-full bg-[#8DB9F0] text-white flex items-center justify-center text-[10px] font-bold">
-                        {s.step}
+                        {m.num}
                       </span>
-                      <span>{s.title}</span>
+                      <span>{m.title}</span>
                     </div>
                     <Link
-                      href={s.route}
+                      href={m.route}
                       onClick={() => setIsOpen(false)}
                       className="text-[11px] text-[#6BA3E8] font-semibold hover:underline flex items-center gap-1"
                     >
-                      <span>Jump</span>
+                      <span>Open Module</span>
                       <ArrowRight className="w-3 h-3" />
                     </Link>
                   </div>
                   <p className="text-[11px] text-[#74778A] pl-7 leading-relaxed">
-                    {s.script}
+                    {m.desc}
                   </p>
                 </div>
               ))}
             </div>
 
             <div className="p-3 rounded-xl bg-[#E9E8F8]/50 border border-[#DFDEEB] text-[11px] text-[#25283A] flex items-center justify-between">
-              <span className="font-semibold">MIRA = Medical Intelligence & Robotic Automation</span>
+              <div className="flex items-center gap-1.5 font-medium">
+                <Shield className="w-3.5 h-3.5 text-[#8DB9F0]" />
+                <span>MIRA: Medical Intelligence & Robotic Automation</span>
+              </div>
               <button
                 onClick={() => setIsOpen(false)}
-                className="px-3 py-1 rounded-lg bg-[#8DB9F0] text-white font-semibold text-xs hover:bg-[#6BA3E8]"
+                className="px-3 py-1 rounded-lg bg-[#8DB9F0] text-white font-semibold text-xs hover:bg-[#6BA3E8] cursor-pointer"
               >
-                Got It, Start Demo
+                Close
               </button>
             </div>
           </div>
@@ -133,4 +132,3 @@ export default function DemoGuideModal() {
     </>
   );
 }
-

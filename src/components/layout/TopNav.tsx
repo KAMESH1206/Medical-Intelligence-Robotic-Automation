@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMiraStore } from "@/lib/store";
 import { ROLES } from "@/lib/constants";
@@ -14,6 +15,7 @@ import {
   Sparkles,
   LogOut,
   User,
+  HelpCircle,
 } from "lucide-react";
 
 export default function TopNav({ title }: { title?: string }) {
@@ -43,19 +45,14 @@ export default function TopNav({ title }: { title?: string }) {
 
       {/* Right Actions */}
       <div className="flex items-center gap-3">
-        {/* Synchronize System State Button */}
-        <button
-          onClick={() => {
-            if (confirm("Synchronize clinical database back to baseline verified state?")) {
-              resetDemoData();
-            }
-          }}
-          className="hidden md:flex items-center gap-1.5 text-xs text-[#74778A] hover:text-[#25283A] px-2.5 py-1.5 rounded-lg border border-[#DFDEEB] bg-[#F8F8FC] hover:bg-[#E9E8F8] transition"
-          title="Restore baseline verified records"
+        {/* Help & System Documentation */}
+        <Link
+          href="/settings"
+          className="p-2 rounded-lg border border-[#DFDEEB] text-[#74778A] hover:bg-[#F8F8FC] hover:text-[#25283A] transition"
+          title="System Architecture & Settings"
         >
-          <RotateCcw className="w-3.5 h-3.5 text-[#8DB9F0]" />
-          <span>Sync Baseline</span>
-        </button>
+          <HelpCircle className="w-4 h-4" />
+        </Link>
 
         {/* Notifications */}
         <div className="relative">

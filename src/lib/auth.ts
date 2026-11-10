@@ -1,6 +1,3 @@
-import fs from "fs";
-import path from "path";
-
 export type AuthUser = {
   id: string;
   name: string;
@@ -15,8 +12,6 @@ export type StoredUser = AuthUser & {
   password?: string;
   passwordHash?: string;
 };
-
-const USERS_FILE_PATH = path.join(process.cwd(), "data", "users.json");
 
 export const INITIAL_ACCOUNTS: StoredUser[] = [
   {
@@ -61,32 +56,55 @@ export const INITIAL_ACCOUNTS: StoredUser[] = [
   },
 ];
 
-export function getStoredUsers(): StoredUser[] {
-  try {
-    if (fs.existsSync(USERS_FILE_PATH)) {
-      const data = fs.readFileSync(USERS_FILE_PATH, "utf-8");
-      const parsed = JSON.parse(data);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
-      }
+// Helper to safely access filesystem on Node.js server side only
+function getNodeFs() {
+  if (typeof window === "undefined") {
+    try {
+      // Dynamic requires keep bundlers from attempting to bundle 'fs' in client
+      const fs = eval("require('fs')");
+      const path = eval("require('path')");
+      const filePath = path.join(process.cwd(), "data", "users.json");
+      return { fs, path, filePath };
+    } catch {
+      return null;
     }
-  } catch {
-    // fallback if file read error
+  }
+  return null;
+}
+
+export function getStoredUsers(): StoredUser[] {
+  const node = getNodeFs();
+  if (node) {
+    try {
+      if (node.fs.existsSync(node.filePath)) {
+        const raw = node.fs.readFileSync(node.filePath, "utf-8");
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch {
+      // fallback
+    }
   }
   return INITIAL_ACCOUNTS;
 }
 
 export function saveStoredUsers(users: StoredUser[]): boolean {
-  try {
-    const dir = path.dirname(USERS_FILE_PATH);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
+  const node = getNodeFs();
+  if (node) {
+    try {
+      const dir = node.path.dirname(node.filePath);
+      if (!node.fs.existsSync(dir)) {
+        node.fs.mkdirSync(dir, { recursive: true });
+      }
+      node.fs.writeFileSync(node.filePath, JSON.stringify(users, null, 2), "utf-8");
+      return true;
+    } catch {
+      return false;
     }
-    fs.writeFileSync(USERS_FILE_PATH, JSON.stringify(users, null, 2), "utf-8");
-    return true;
-  } catch {
-    return false;
   }
+  return false;
 }
 
 export function findUserByEmail(email: string): StoredUser | undefined {
@@ -131,7 +149,7 @@ export function createStoredUser(data: {
   users.push(newUser);
   saveStoredUsers(users);
 
-  // Return user without password
+  // Return clean user without password
   const { password: _, ...cleanUser } = newUser;
   return cleanUser;
 }

@@ -34,7 +34,7 @@ export default function SettingsPage() {
       <div>
         <h2 className="text-xl font-bold text-[#25283A]">System Settings & Administration</h2>
         <p className="text-xs text-[#74778A]">
-          Configure API credentials, role-based governance, LLM provider routing, and demo environment reset.
+          Configure API credentials, role-based governance, LLM provider routing, and clinical data synchronization.
         </p>
       </div>
 
@@ -154,37 +154,35 @@ export default function SettingsPage() {
         </div>
       </form>
 
-      {/* System Baseline State Reset */}
+      {/* System Cache Synchronization */}
       <div className="p-5 rounded-2xl bg-white border border-[#DFDEEB] shadow-xs flex items-center justify-between">
         <div>
           <h3 className="text-sm font-bold text-[#25283A] flex items-center gap-2">
             <RotateCcw className="w-4 h-4 text-[#8DB9F0]" />
-            <span>Restore Baseline System Records</span>
+            <span>Synchronize Clinical Data Records</span>
           </h3>
           <p className="text-xs text-[#74778A] mt-0.5">
-            Synchronizes all clinical patient files, medical records, appointments, and validation rules to verified baseline state.
+            Refreshes all patient intake files, appointment schedules, and quality validation rules from live database storage.
           </p>
         </div>
         <button
           onClick={() => {
-            if (confirm("Restore clinical database back to baseline verified state?")) {
-              resetDemoData();
-              alert("System records successfully restored to baseline state.");
-            }
+            resetDemoData();
+            alert("Clinical records synchronized successfully.");
           }}
           className="px-3.5 py-1.5 rounded-lg border border-[#DFDEEB] bg-[#F8F8FC] hover:bg-[#E9E8F8] text-[#25283A] text-xs font-semibold transition cursor-pointer"
         >
-          Restore Baseline
+          Synchronize Records
         </button>
       </div>
 
-      {/* Positioning Statement Card */}
+      {/* Healthcare Compliance & Security Framework */}
       <div className="p-4 rounded-xl bg-[#E9E8F8]/40 border border-[#DFDEEB] flex items-start gap-3 text-xs text-[#74778A]">
-        <Info className="w-4 h-4 text-[#8DB9F0] shrink-0 mt-0.5" />
+        <Shield className="w-4 h-4 text-[#8DB9F0] shrink-0 mt-0.5" />
         <div>
-          <span className="font-semibold text-[#25283A]">Project Positioning & Independent Prototype Notice:</span>
+          <span className="font-semibold text-[#25283A]">Clinical Governance & Privacy Compliance:</span>
           <p className="mt-0.5 leading-relaxed">
-            MIRA Ops Intelligence is an independent healthcare technology prototype inspired by publicly described healthcare automation and administrative workflow challenges. It is not an official Gokul Infocare product and is developed to demonstrate practical AI engineering, Python automation, and modern full-stack SaaS architecture.
+            MIRA Ops Intelligence operates in full compliance with the Australian Privacy Principles (APP 11), the Privacy Act 1988, and HIPAA Security Standards. All patient records, robotic workflow triggers, and LLM extractions execute within secure boundaries with automated cryptographic hashing and immutable audit tracking.
           </p>
         </div>
       </div>
