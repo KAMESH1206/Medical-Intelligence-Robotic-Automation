@@ -20,12 +20,29 @@ import {
 } from "lucide-react";
 
 export default function AppointmentsPage() {
-  const { appointments, addAppointment, updateAppointmentStatus, patients } = useMiraStore();
+  const { appointments, addAppointment, updateAppointmentStatus, patients, providers } = useMiraStore();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [clinicFilter, setClinicFilter] = useState<string>("all");
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
   const [conflictWarning, setConflictWarning] = useState<string | null>(null);
+  const [isCustomClinic, setIsCustomClinic] = useState(false);
+  const [customClinic, setCustomClinic] = useState("");
+
+  const availableClinics = Array.from(
+    new Set([
+      ...CLINIC_LOCATIONS,
+      ...providers.map((p) => p.clinicName).filter(Boolean),
+    ])
+  );
+
+  const filterClinicOptions = Array.from(
+    new Set([
+      ...CLINIC_LOCATIONS,
+      ...appointments.map((a) => a.clinicName).filter(Boolean),
+      ...providers.map((p) => p.clinicName).filter(Boolean),
+    ])
+  );
 
   const [formData, setFormData] = useState({
     patientName: "",
@@ -49,10 +66,12 @@ export default function AppointmentsPage() {
     e.preventDefault();
     setConflictWarning(null);
 
+    const finalClinic = (isCustomClinic && customClinic.trim()) ? customClinic.trim() : (formData.clinicName || CLINIC_LOCATIONS[0]);
+
     // Conflict check: Check if same clinic and date and time already has a confirmed appointment
     const conflict = appointments.find(
       (a) =>
-        a.clinicName === formData.clinicName &&
+        a.clinicName?.toLowerCase() === finalClinic.toLowerCase() &&
         a.preferredDate === formData.preferredDate &&
         a.preferredTime === formData.preferredTime &&
         a.status === "confirmed"
@@ -60,7 +79,7 @@ export default function AppointmentsPage() {
 
     if (conflict) {
       setConflictWarning(
-        `Conflict Detected: Clinic ${formData.clinicName} already has a confirmed appointment at ${formData.preferredTime} on ${formData.preferredDate}. Please select another slot or verify availability.`
+        `Conflict Detected: Clinic ${finalClinic} already has a confirmed appointment at ${formData.preferredTime} on ${formData.preferredDate}. Please select another slot or verify availability.`
       );
       return;
     }
@@ -68,7 +87,7 @@ export default function AppointmentsPage() {
     addAppointment({
       patientId: `pat_${Date.now()}`,
       patientName: formData.patientName,
-      clinicName: formData.clinicName,
+      clinicName: finalClinic,
       preferredDate: formData.preferredDate,
       preferredTime: formData.preferredTime,
       appointmentType: formData.appointmentType,
@@ -77,6 +96,8 @@ export default function AppointmentsPage() {
     });
 
     setIsNewModalOpen(false);
+    setIsCustomClinic(false);
+    setCustomClinic("");
     setFormData({
       patientName: "",
       clinicName: CLINIC_LOCATIONS[0],
@@ -152,7 +173,7 @@ export default function AppointmentsPage() {
               className="border border-[#DFDEEB] rounded-lg px-2.5 py-1.5 bg-[#F8F8FC] text-xs focus:outline-none focus:border-[#8DB9F0]"
             >
               <option value="all">All Clinics</option>
-              {CLINIC_LOCATIONS.map((c) => (
+              {filterClinicOptions.map((c) => (
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>
@@ -301,16 +322,51 @@ export default function AppointmentsPage() {
               </div>
 
               <div>
-                <label className="mira-label">Clinic Location</label>
-                <select
-                  value={formData.clinicName}
-                  onChange={(e) => setFormData({ ...formData, clinicName: e.target.value })}
-                  className="mira-input"
-                >
-                  {CLINIC_LOCATIONS.map((c) => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="mira-label !mb-0">Clinic Location</label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsCustomClinic(!isCustomClinic);
+                      if (!isCustomClinic) setCustomClinic("");
+                    }}
+                    className="text-[11px] text-[#8DB9F0] hover:underline font-semibold cursor-pointer"
+                  >
+                    {isCustomClinic ? "← Pick from list" : "+ Custom Clinic"}
+                  </button>
+                </div>
+                {!isCustomClinic ? (
+                  <select
+                    value={formData.clinicName}
+                    onChange={(e) => {
+                      if (e.target.value === "__custom__") {
+                        setIsCustomClinic(true);
+                        setCustomClinic("");
+                      } else {
+                        setFormData({ ...formData, clinicName: e.target.value });
+                      }
+                    }}
+                    className="mira-input"
+                  >
+                    {availableClinics.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                    <option value="__custom__">+ Enter Custom Clinic...</option>
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    placeholder="e.g. Apollo Health, Kauvery Hospital..."
+                    value={customClinic}
+                    onChange={(e) => {
+                      setCustomClinic(e.target.value);
+                      setFormData({ ...formData, clinicName: e.target.value });
+                    }}
+                    className="mira-input"
+                    autoFocus
+                    required
+                  />
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-3">

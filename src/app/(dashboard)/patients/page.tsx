@@ -22,13 +22,30 @@ import {
 } from "lucide-react";
 
 export default function PatientsPage() {
-  const { patients, addPatient, deletePatient, updatePatient, currentUser } = useMiraStore();
+  const { patients, addPatient, deletePatient, updatePatient, currentUser, providers } = useMiraStore();
   const perms = ROLE_PERMISSIONS[currentUser.role] || ROLE_PERMISSIONS.healthcare_admin;
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [clinicFilter, setClinicFilter] = useState<string>("all");
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isCustomClinic, setIsCustomClinic] = useState(false);
+  const [customClinic, setCustomClinic] = useState("");
+
+  const availableClinics = Array.from(
+    new Set([
+      ...CLINIC_LOCATIONS,
+      ...providers.map((p) => p.clinicName).filter(Boolean),
+    ])
+  );
+
+  const filterClinicOptions = Array.from(
+    new Set([
+      ...CLINIC_LOCATIONS,
+      ...patients.map((p) => p.preferredClinic).filter(Boolean),
+      ...providers.map((p) => p.clinicName).filter(Boolean),
+    ])
+  );
 
   // New Patient Form State
   const [formData, setFormData] = useState({
@@ -63,15 +80,19 @@ export default function PatientsPage() {
 
     const score = Math.max(50, 100 - missing.length * 15);
     const status: PatientStatus = missing.length > 1 ? "incomplete" : missing.length === 1 ? "pending_review" : "active";
+    const finalClinic = (isCustomClinic && customClinic.trim()) ? customClinic.trim() : (formData.preferredClinic || CLINIC_LOCATIONS[0]);
 
     addPatient({
       ...formData,
+      preferredClinic: finalClinic,
       status,
       validationScore: score,
       missingFields: missing.length > 0 ? missing : undefined,
     });
 
     setIsAddModalOpen(false);
+    setIsCustomClinic(false);
+    setCustomClinic("");
     setFormData({
       name: "",
       email: "",
@@ -178,7 +199,7 @@ export default function PatientsPage() {
               className="border border-[#DFDEEB] rounded-lg px-2.5 py-1.5 bg-[#F8F8FC] text-xs focus:outline-none focus:border-[#8DB9F0]"
             >
               <option value="all">All Clinics</option>
-              {CLINIC_LOCATIONS.map((c) => (
+              {filterClinicOptions.map((c) => (
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>
@@ -453,16 +474,51 @@ export default function PatientsPage() {
                   />
                 </div>
                 <div>
-                  <label className="mira-label">Preferred Clinic</label>
-                  <select
-                    value={formData.preferredClinic}
-                    onChange={(e) => setFormData({ ...formData, preferredClinic: e.target.value })}
-                    className="mira-input"
-                  >
-                    {CLINIC_LOCATIONS.map((c) => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
-                  </select>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="mira-label !mb-0">Preferred Clinic</label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsCustomClinic(!isCustomClinic);
+                        if (!isCustomClinic) setCustomClinic("");
+                      }}
+                      className="text-[11px] text-[#8DB9F0] hover:underline font-semibold cursor-pointer"
+                    >
+                      {isCustomClinic ? "← Pick from list" : "+ Custom Clinic"}
+                    </button>
+                  </div>
+                  {!isCustomClinic ? (
+                    <select
+                      value={formData.preferredClinic}
+                      onChange={(e) => {
+                        if (e.target.value === "__custom__") {
+                          setIsCustomClinic(true);
+                          setCustomClinic("");
+                        } else {
+                          setFormData({ ...formData, preferredClinic: e.target.value });
+                        }
+                      }}
+                      className="mira-input"
+                    >
+                      {availableClinics.map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                      <option value="__custom__">+ Enter Custom Clinic...</option>
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      placeholder="e.g. Apollo Health, Kauvery Hospital..."
+                      value={customClinic}
+                      onChange={(e) => {
+                        setCustomClinic(e.target.value);
+                        setFormData({ ...formData, preferredClinic: e.target.value });
+                      }}
+                      className="mira-input"
+                      autoFocus
+                      required
+                    />
+                  )}
                 </div>
               </div>
 
