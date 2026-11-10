@@ -24,6 +24,7 @@ import {
   MessageSquare,
   Phone,
   ExternalLink,
+  Trash2,
 } from "lucide-react";
 
 interface DispatchedEmail {
@@ -50,7 +51,7 @@ interface DispatchedWhatsapp {
 }
 
 export default function AppointmentsPage() {
-  const { appointments, addAppointment, updateAppointmentStatus, patients, providers, runWorkflow } = useMiraStore();
+  const { appointments, addAppointment, updateAppointmentStatus, deleteAppointment, patients, providers, runWorkflow } = useMiraStore();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [clinicFilter, setClinicFilter] = useState<string>("all");
@@ -169,14 +170,106 @@ Need to reschedule? Reply *RESCHEDULE* to this WhatsApp or contact reception.`;
     }
   };
 
+  const generateCancellationEmailData = (apt: Appointment): DispatchedEmail => {
+    const matchedPatient = patients.find(
+      (p) => p.name.toLowerCase() === apt.patientName.toLowerCase()
+    );
+    const recipientEmail = apt.patientEmail || matchedPatient?.email || `${apt.patientName.toLowerCase().replace(/\s+/g, ".")}@example.com`;
+    const clinicSlug = (apt.clinicName || "clinic").toLowerCase().replace(/[^a-z0-9]/g, "");
+    const clinicEmail = `reception@${clinicSlug || "mirahealth"}.com.au`;
+
+    return {
+      to: recipientEmail,
+      cc: clinicEmail,
+      subject: `Appointment Cancelled: ${apt.patientName} at ${apt.clinicName || "Clinic"}`,
+      body: `Dear ${apt.patientName},
+
+Your healthcare appointment at ${apt.clinicName || "our clinic"} scheduled for ${apt.preferredDate} at ${apt.preferredTime || "10:00 AM"} has been CANCELLED as requested.
+
+--- CANCELLATION SUMMARY ---
+• Booking Reference: APT-${apt.id.slice(-6).toUpperCase()}
+• Patient Name: ${apt.patientName}
+• Clinic Location: ${apt.clinicName}
+• Cancelled Slot: ${apt.preferredDate} at ${apt.preferredTime || "10:00 AM"}
+• Status: CANCELLED (Slot released to waiting list)
+
+If this cancellation was in error or you would like to reschedule to an alternate date, please contact clinic reception or book via our online portal.
+
+Warm regards,
+Clinical Administration Team
+${apt.clinicName || "MIRA Ops Healthcare Partner Practice"}
+Powered by MIRA Ops Intelligence`,
+      sentAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+      appointmentId: apt.id,
+      patientName: apt.patientName,
+      clinicName: apt.clinicName || "Clinic",
+    };
+  };
+
+  const generateCancellationWhatsappData = (apt: Appointment): DispatchedWhatsapp => {
+    const matchedPatient = patients.find(
+      (p) => p.name.toLowerCase() === apt.patientName.toLowerCase()
+    );
+    const phone = apt.patientPhone || matchedPatient?.phone || "+91 98765 43210";
+    const refCode = `APT-${apt.id.slice(-6).toUpperCase()}`;
+
+    const messageText = `⚠️ *MIRA HEALTHCARE - APPOINTMENT CANCELLED*
+━━━━━━━━━━━━━━━━━━━━
+Dear *${apt.patientName}*,
+
+Your healthcare appointment at *${apt.clinicName}* has been *CANCELLED*.
+
+📅 *Cancelled Date:* ${apt.preferredDate}
+⏰ *Cancelled Slot:* ${apt.preferredTime || "10:00 AM"}
+🔖 *Ref No:* ${refCode}
+
+If this cancellation was made in error or you would like to reschedule, please reply *REBOOK* to this WhatsApp or contact clinic reception.`;
+
+    return {
+      phone,
+      patientName: apt.patientName,
+      clinicName: apt.clinicName || "Clinic",
+      date: apt.preferredDate,
+      time: apt.preferredTime || "10:00 AM",
+      service: apt.appointmentType || "General Consultation",
+      messageText,
+      sentAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+      status: "delivered",
+    };
+  };
+
+  const handleCancelAppointment = async (apt: Appointment) => {
+    updateAppointmentStatus(apt.id, "cancelled");
+    const email = generateCancellationEmailData(apt);
+    const whatsapp = generateCancellationWhatsappData(apt);
+    setActiveEmail(email);
+    setActiveWhatsapp(whatsapp);
+    setEmailToast({
+      message: `Cancellation Notice Dispatched: Email sent to ${email.to} & WhatsApp alert dispatched to ${whatsapp.phone}!`,
+      email,
+    });
+
+    try {
+      await runWorkflow("wf_004");
+    } catch {
+      // safe fallback
+    }
+  };
+
+  const handleDeleteAppointment = (id: string, patientName: string) => {
+    if (confirm(`Are you sure you want to completely delete the appointment record for "${patientName}"? This action cannot be undone.`)) {
+      deleteAppointment(id);
+    }
+  };
+
   const openEmailInspector = (apt: Appointment) => {
-    const email = generateEmailData(apt);
+    const email = apt.status === "cancelled" ? generateCancellationEmailData(apt) : generateEmailData(apt);
     setActiveEmail(email);
     setShowEmailModal(true);
   };
 
   const openWhatsappInspector = (apt: Appointment) => {
-    const whatsapp = generateWhatsappData(apt);
+    const whatsapp = apt.status === "cancelled" ? generateCancellationWhatsappData(apt) : generateWhatsappData(apt);
     setActiveWhatsapp(whatsapp);
     setShowWhatsappModal(true);
   };
@@ -480,13 +573,13 @@ Need to reschedule? Reply *RESCHEDULE* to this WhatsApp or contact reception.`;
                         >
                           {apt.status.replace("_", " ")}
                         </span>
-                        {apt.status === "confirmed" && (
+                        {(apt.status === "confirmed" || apt.status === "cancelled") && (
                           <>
                             <button
                               type="button"
                               onClick={() => openEmailInspector(apt)}
                               className="inline-flex items-center gap-1 text-[11px] text-[#248A63] bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-1.5 py-0.5 rounded cursor-pointer transition font-medium"
-                              title="Click to view automated email sent to patient"
+                              title={`Click to view automated ${apt.status} email`}
                             >
                               <MailCheck className="w-3 h-3 text-[#248A63]" />
                               <span>Email</span>
@@ -495,7 +588,7 @@ Need to reschedule? Reply *RESCHEDULE* to this WhatsApp or contact reception.`;
                               type="button"
                               onClick={() => openWhatsappInspector(apt)}
                               className="inline-flex items-center gap-1 text-[11px] text-emerald-800 bg-emerald-100/70 hover:bg-emerald-200 border border-emerald-300 px-1.5 py-0.5 rounded cursor-pointer transition font-medium"
-                              title="Click to view automated WhatsApp alert sent to patient"
+                              title={`Click to view automated ${apt.status} WhatsApp alert`}
                             >
                               <MessageSquare className="w-3 h-3 text-emerald-700" />
                               <span>WhatsApp</span>
@@ -510,7 +603,7 @@ Need to reschedule? Reply *RESCHEDULE* to this WhatsApp or contact reception.`;
                           <button
                             onClick={() => handleConfirmAppointment(apt)}
                             className="px-2.5 py-1 rounded bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 text-xs font-semibold transition cursor-pointer flex items-center gap-1"
-                            title="Confirm Booking & Dispatch Email Notification"
+                            title="Confirm Booking & Dispatch Confirmation Notice"
                           >
                             <Check className="w-3.5 h-3.5" />
                             <span>Confirm</span>
@@ -518,13 +611,21 @@ Need to reschedule? Reply *RESCHEDULE* to this WhatsApp or contact reception.`;
                         )}
                         {apt.status !== "cancelled" && (
                           <button
-                            onClick={() => updateAppointmentStatus(apt.id, "cancelled")}
+                            onClick={() => handleCancelAppointment(apt)}
                             className="px-2.5 py-1 rounded bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 text-xs font-semibold transition cursor-pointer"
-                            title="Cancel Booking"
+                            title="Cancel Booking & Dispatch Cancellation Notice"
                           >
                             Cancel
                           </button>
                         )}
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteAppointment(apt.id, apt.patientName)}
+                          className="p-1.5 rounded text-[#9699AA] hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition cursor-pointer"
+                          title="Delete Appointment Record"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -907,6 +1008,15 @@ Need to reschedule? Reply *RESCHEDULE* to this WhatsApp or contact reception.`;
                 Patient and clinic notified in real time.
               </span>
               <div className="flex items-center gap-2">
+                <a
+                  href={`mailto:${activeEmail.to}?subject=${encodeURIComponent(activeEmail.subject)}&body=${encodeURIComponent(activeEmail.body)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center gap-1.5 transition shadow-xs"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>Send via Gmail / Mail App</span>
+                </a>
                 <button
                   type="button"
                   onClick={() => {
@@ -916,7 +1026,7 @@ Need to reschedule? Reply *RESCHEDULE* to this WhatsApp or contact reception.`;
                   className="px-3 py-1.5 rounded-lg border border-[#DFDEEB] hover:bg-[#F8F8FC] text-xs font-medium text-[#25283A] transition cursor-pointer flex items-center gap-1.5"
                 >
                   <Send className="w-3.5 h-3.5 text-[#8DB9F0]" />
-                  <span>Resend Email</span>
+                  <span>Resend Relay</span>
                 </button>
                 <button
                   type="button"

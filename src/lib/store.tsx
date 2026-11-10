@@ -58,6 +58,7 @@ interface MiraStoreContextType {
   appointments: Appointment[];
   addAppointment: (apt: Omit<Appointment, "id" | "createdAt" | "updatedAt">) => Appointment;
   updateAppointmentStatus: (id: string, status: Appointment["status"]) => void;
+  deleteAppointment: (id: string) => void;
   // Quality & Duplicates
   validationIssues: ValidationIssue[];
   resolveValidationIssue: (id: string) => void;
@@ -460,6 +461,15 @@ export function MiraStoreProvider({ children }: { children: React.ReactNode }) {
     logAudit("record_updated", "appointment", id, { newStatus: status });
   };
 
+  const deleteAppointment = (id: string) => {
+    setAppointments((prev) => {
+      const updated = prev.filter((a) => a.id !== id);
+      saveState({ appointments: updated });
+      return updated;
+    });
+    logAudit("record_deleted", "appointment", id);
+  };
+
   const resolveValidationIssue = (id: string) => {
     setValidationIssues((prev) => {
       const updated = prev.filter((i) => i.id !== id);
@@ -725,6 +735,7 @@ export function MiraStoreProvider({ children }: { children: React.ReactNode }) {
         appointments,
         addAppointment,
         updateAppointmentStatus,
+        deleteAppointment,
         validationIssues,
         resolveValidationIssue,
         duplicateCandidates,
