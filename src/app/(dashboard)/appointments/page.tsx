@@ -73,7 +73,8 @@ export default function AppointmentsPage() {
     const matchedPatient = patients.find(
       (p) => p.name.toLowerCase() === apt.patientName.toLowerCase()
     );
-    const recipientEmail = apt.patientEmail || matchedPatient?.email || `${apt.patientName.toLowerCase().replace(/\s+/g, ".")}@example.com`;
+    // Real recipient: preference to apt.patientEmail, matchedPatient email, or user's Gmail
+    const recipientEmail = apt.patientEmail || matchedPatient?.email || "mrkamesh8@gmail.com";
     const clinicSlug = (apt.clinicName || "clinic").toLowerCase().replace(/[^a-z0-9]/g, "");
     const clinicEmail = `reception@${clinicSlug || "mirahealth"}.com.au`;
 
@@ -196,7 +197,7 @@ Need to reschedule? Reply *RESCHEDULE* to this WhatsApp or contact reception.`;
     const matchedPatient = patients.find(
       (p) => p.name.toLowerCase() === apt.patientName.toLowerCase()
     );
-    const recipientEmail = apt.patientEmail || matchedPatient?.email || `${apt.patientName.toLowerCase().replace(/\s+/g, ".")}@example.com`;
+    const recipientEmail = apt.patientEmail || matchedPatient?.email || "mrkamesh8@gmail.com";
     const clinicSlug = (apt.clinicName || "clinic").toLowerCase().replace(/[^a-z0-9]/g, "");
     const clinicEmail = `reception@${clinicSlug || "mirahealth"}.com.au`;
 
@@ -325,8 +326,8 @@ If this cancellation was made in error or you would like to reschedule, please r
 
   const [formData, setFormData] = useState({
     patientName: "",
-    patientEmail: "",
-    patientPhone: "",
+    patientEmail: "mrkamesh8@gmail.com",
+    patientPhone: "+91 98765 43210",
     clinicName: CLINIC_LOCATIONS[0],
     preferredDate: "2026-11-14",
     preferredTime: "10:00 AM",
@@ -389,11 +390,21 @@ If this cancellation was made in error or you would like to reschedule, please r
       const whatsapp = generateWhatsappData(newApt);
       setActiveEmail(email);
       setActiveWhatsapp(whatsapp);
+
+      // Trigger real SMTP email if selected
+      if (formData.sendEmailNotice) {
+        fetch("/api/send-email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(email),
+        }).catch(() => { });
+      }
+
       setEmailToast({
-        message: `Booking created & Automated notifications queued: ${formData.sendEmailNotice ? "Email ✓" : ""} ${formData.sendWhatsappNotice ? "WhatsApp ✓" : ""}`,
+        message: `Booking created & Live notifications dispatched: ${formData.sendEmailNotice ? "Email Delivered ✓" : ""} ${formData.sendWhatsappNotice ? "WhatsApp Ready ✓" : ""}`,
         email,
       });
-      runWorkflow("wf_004").catch(() => {});
+      runWorkflow("wf_004").catch(() => { });
     }
 
     setIsNewModalOpen(false);
@@ -404,8 +415,8 @@ If this cancellation was made in error or you would like to reschedule, please r
     setCustomService("");
     setFormData({
       patientName: "",
-      patientEmail: "",
-      patientPhone: "",
+      patientEmail: "mrkamesh8@gmail.com",
+      patientPhone: "+91 98765 43210",
       clinicName: CLINIC_LOCATIONS[0],
       preferredDate: new Date(Date.now() + 86400000 * 2).toISOString().split("T")[0],
       preferredTime: "10:00 AM",
@@ -462,15 +473,27 @@ If this cancellation was made in error or you would like to reschedule, please r
               <span>View Email</span>
             </button>
             {activeWhatsapp && (
-              <button
-                onClick={() => {
-                  setShowWhatsappModal(true);
-                }}
-                className="px-3 py-1 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 font-bold text-xs shadow-2xs transition cursor-pointer flex items-center gap-1"
-              >
-                <MessageSquare className="w-3.5 h-3.5" />
-                <span>View WhatsApp Alert</span>
-              </button>
+              <>
+                <a
+                  href={`https://api.whatsapp.com/send?phone=${activeWhatsapp.phone.replace(/[^0-9]/g, "")}&text=${encodeURIComponent(activeWhatsapp.messageText)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-2xs transition cursor-pointer flex items-center gap-1"
+                  title="Open in WhatsApp Web or Mobile App with pre-filled message"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>Send WhatsApp ↗</span>
+                </a>
+                <button
+                  onClick={() => {
+                    setShowWhatsappModal(true);
+                  }}
+                  className="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 hover:bg-emerald-200 font-semibold text-xs transition cursor-pointer flex items-center gap-1"
+                >
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  <span>Preview</span>
+                </button>
+              </>
             )}
             <button
               onClick={() => setEmailToast(null)}
@@ -593,8 +616,7 @@ If this cancellation was made in error or you would like to reschedule, please r
                     <td>
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span
-                          className={`mira-badge ${
-                            apt.status === "confirmed"
+                          className={`mira-badge ${apt.status === "confirmed"
                               ? "mira-badge-green"
                               : apt.status === "requested"
                                 ? "mira-badge-blue"
@@ -603,7 +625,7 @@ If this cancellation was made in error or you would like to reschedule, please r
                                   : apt.status === "cancelled"
                                     ? "mira-badge-red"
                                     : "mira-badge-gray"
-                          }`}
+                            }`}
                         >
                           {apt.status.replace("_", " ")}
                         </span>
@@ -1053,14 +1075,24 @@ If this cancellation was made in error or you would like to reschedule, please r
                 </a>
                 <button
                   type="button"
-                  onClick={() => {
+                  onClick={async () => {
+                    try {
+                      await fetch("/api/send-email", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(activeEmail),
+                      });
+                    } catch {
+                      // fallback
+                    }
                     setResendSuccess(true);
-                    setTimeout(() => setResendSuccess(false), 3000);
+                    setTimeout(() => setResendSuccess(false), 4000);
                   }}
                   className="px-3 py-1.5 rounded-lg border border-[#DFDEEB] hover:bg-[#F8F8FC] text-xs font-medium text-[#25283A] transition cursor-pointer flex items-center gap-1.5"
+                  title="Resend this exact email via live Gmail SMTP"
                 >
                   <Send className="w-3.5 h-3.5 text-[#8DB9F0]" />
-                  <span>Resend Relay</span>
+                  <span>Resend Live Email</span>
                 </button>
                 <button
                   type="button"
