@@ -63,6 +63,12 @@ export async function POST(request: Request) {
       );
     }
 
+    if (body.action === "delete" && body.id) {
+      const updated = appointments.filter((a) => a.id !== body.id);
+      saveLiveAppointments(updated);
+      return NextResponse.json({ success: true, message: "Appointment deleted.", count: updated.length });
+    }
+
     if (body.action === "update" && body.id) {
       const updated = appointments.map((a) =>
         a.id === body.id ? { ...a, ...body, updatedAt: new Date().toISOString() } : a
@@ -101,5 +107,21 @@ export async function POST(request: Request) {
       { success: false, error: "Failed to process appointment" },
       { status: 400 }
     );
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+    if (!id) {
+      return NextResponse.json({ success: false, error: "Missing id" }, { status: 400 });
+    }
+    const appointments = getLiveAppointments();
+    const updated = appointments.filter((a) => a.id !== id);
+    saveLiveAppointments(updated);
+    return NextResponse.json({ success: true, message: "Appointment deleted permanently.", count: updated.length });
+  } catch {
+    return NextResponse.json({ success: false, error: "Failed to delete" }, { status: 500 });
   }
 }

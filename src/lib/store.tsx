@@ -492,6 +492,16 @@ export function MiraStoreProvider({ children }: { children: React.ReactNode }) {
       return updated;
     });
     logAudit("record_deleted", "appointment", id);
+    // Sync deletion to server file so polling does not restore it
+    fetch(`/api/appointments?id=${encodeURIComponent(id)}`, {
+      method: "DELETE",
+    }).catch(() => {
+      fetch("/api/appointments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete", id }),
+      }).catch(() => {});
+    });
   };
 
   const rescheduleAppointment = (id: string, date: string, time: string, notes?: string) => {

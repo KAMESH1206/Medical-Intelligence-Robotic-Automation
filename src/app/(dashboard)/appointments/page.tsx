@@ -387,9 +387,12 @@ If this cancellation was made in error or you would like to reschedule, please r
     }
   };
 
-  const handleDeleteAppointment = (id: string, patientName: string) => {
+  const handleDeleteAppointment = async (id: string, patientName: string) => {
     if (confirm(`Are you sure you want to completely delete the appointment record for "${patientName}"? This action cannot be undone.`)) {
       deleteAppointment(id);
+      try {
+        await fetch(`/api/appointments?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+      } catch {}
     }
   };
 
