@@ -1,7 +1,7 @@
 "use client";
 
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useMiraStore } from "@/lib/store";
 import { CLINIC_LOCATIONS, SERVICE_TYPES } from "@/lib/constants";
 import type { Appointment, AppointmentStatus } from "@/lib/types";
@@ -51,7 +51,7 @@ interface DispatchedWhatsapp {
 }
 
 export default function AppointmentsPage() {
-  const { appointments, addAppointment, updateAppointmentStatus, deleteAppointment, patients, providers, runWorkflow } = useMiraStore();
+  const { appointments, addAppointment, updateAppointmentStatus, deleteAppointment, syncAppointments, patients, providers, runWorkflow } = useMiraStore();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [clinicFilter, setClinicFilter] = useState<string>("all");
@@ -68,6 +68,75 @@ export default function AppointmentsPage() {
   const [isCustomPatient, setIsCustomPatient] = useState(false);
   const [isCustomService, setIsCustomService] = useState(false);
   const [customService, setCustomService] = useState("");
+  const [showBotSimulator, setShowBotSimulator] = useState(false);
+  const [simulatorMessages, setSimulatorMessages] = useState<Array<{ sender: "bot" | "patient"; text: string; time: string }>>([
+    {
+      sender: "bot",
+      text: `🏥 *MIRA HEALTHCARE OPERATIONS*\n━━━━━━━━━━━━━━━━━━━━\nDear *Kamesh M R*,\n\nYour healthcare appointment has been *CONFIRMED*!\n\n📅 Date: 2026-11-14\n⏰ Time: 10:00 AM\n🏥 Clinic: Sydney Central Clinic\n\nNeed to reschedule? Reply *RESCHEDULE* right here to select a new date and time.`,
+      time: "10:00 AM",
+    },
+  ]);
+  const [simInput, setSimInput] = useState("");
+  const [isSimLoading, setIsSimLoading] = useState(false);
+
+  // Poll for live two-way WhatsApp updates every 4 seconds
+  useEffect(() => {
+    let isMounted = true;
+    const fetchSync = async () => {
+      try {
+        const res = await fetch("/api/appointments");
+        const json = await res.json();
+        if (isMounted && json.success && Array.isArray(json.data) && json.data.length > 0) {
+          syncAppointments(json.data);
+        }
+      } catch {}
+    };
+    const interval = setInterval(fetchSync, 4000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [syncAppointments]);
+
+  const handleSendSimulatorMessage = async (textToSend?: string) => {
+    const text = (textToSend || simInput).trim();
+    if (!text) return;
+    setSimInput("");
+
+    const nowTime = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    setSimulatorMessages((prev) => [...prev, { sender: "patient", text, time: nowTime }]);
+    setIsSimLoading(true);
+
+    try {
+      const res = await fetch("/api/whatsapp/webhook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phone: "917397186456",
+          message: text,
+          patientName: appointments[0]?.patientName || "Kamesh M R",
+        }),
+      });
+
+      const xml = await res.text();
+      const match = xml.match(/<Message>([\s\S]*?)<\/Message>/);
+      const reply = match ? match[1].replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">") : "Request received.";
+
+      const botTime = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      setSimulatorMessages((prev) => [...prev, { sender: "bot", text: reply, time: botTime }]);
+
+      // Immediately sync appointments table with the new date/time
+      const aptRes = await fetch("/api/appointments");
+      const aptJson = await aptRes.json();
+      if (aptJson.success && Array.isArray(aptJson.data)) {
+        syncAppointments(aptJson.data);
+      }
+    } catch {
+      // safe fallback
+    } finally {
+      setIsSimLoading(false);
+    }
+  };
 
   const generateEmailData = (apt: Appointment): DispatchedEmail => {
     const matchedPatient = patients.find(
@@ -420,7 +489,7 @@ If this cancellation was made in error or you would like to reschedule, please r
     setFormData({
       patientName: "",
       patientEmail: "mrkamesh8@gmail.com",
-      patientPhone: "+91 98765 43210",
+      patientPhone: "+91 73971 86456",
       clinicName: CLINIC_LOCATIONS[0],
       preferredDate: new Date(Date.now() + 86400000 * 2).toISOString().split("T")[0],
       preferredTime: "10:00 AM",
@@ -441,16 +510,28 @@ If this cancellation was made in error or you would like to reschedule, please r
             Intelligent scheduling, clinic conflict checking, and status workflow tracking.
           </p>
         </div>
-        <button
-          onClick={() => {
-            setConflictWarning(null);
-            setIsNewModalOpen(true);
-          }}
-          className="mira-btn-primary text-xs"
-        >
-          <Plus className="w-4 h-4" />
-          <span>New Appointment Request</span>
-        </button>
+        <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => setShowBotSimulator(true)}
+            className="px-3.5 py-1.5 rounded-xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold flex items-center gap-2 transition shadow-xs cursor-pointer"
+            title="Open Interactive WhatsApp Two-Way Rescheduling Bot Simulator"
+          >
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <MessageSquare className="w-4 h-4 text-emerald-600" />
+            <span>Two-Way WhatsApp Bot</span>
+          </button>
+          <button
+            onClick={() => {
+              setConflictWarning(null);
+              setIsNewModalOpen(true);
+            }}
+            className="mira-btn-primary text-xs"
+          >
+            <Plus className="w-4 h-4" />
+            <span>New Appointment Request</span>
+          </button>
+        </div>
       </div>
 
       {/* Dispatched Email & WhatsApp Multi-Channel Notification Toast */}
@@ -1190,6 +1271,156 @@ If this cancellation was made in error or you would like to reschedule, please r
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Two-Way WhatsApp Conversational Rescheduling Bot Simulator Modal */}
+      {showBotSimulator && (
+        <div className="fixed inset-0 bg-[#25283A]/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-[#DFDEEB] flex flex-col h-[650px] max-h-[92vh]">
+            {/* WhatsApp Phone Top App Bar */}
+            <div className="bg-[#075E54] text-white p-3.5 flex items-center justify-between shrink-0 shadow-md">
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <div className="w-10 h-10 rounded-full bg-emerald-700 border-2 border-emerald-400 flex items-center justify-center font-bold text-white text-sm shadow-inner">
+                    MIRA
+                  </div>
+                  <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-400 border-2 border-[#075E54] rounded-full"></span>
+                </div>
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-semibold text-sm leading-tight">MIRA Healthcare Bot</span>
+                    <span className="bg-emerald-500/40 text-emerald-100 text-[10px] px-1.5 py-0.2 rounded font-mono">VERIFIED</span>
+                  </div>
+                  <p className="text-[11px] text-emerald-100/90 leading-tight flex items-center gap-1">
+                    <span>Twilio Sender: +1 (737) 250-8034</span>
+                    <span>•</span>
+                    <span className="text-emerald-300">Online 24/7</span>
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowBotSimulator(false)}
+                className="p-1.5 text-white/80 hover:text-white rounded-full hover:bg-white/10 transition cursor-pointer"
+                title="Close Simulator"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Live Synchronized Info Bar */}
+            <div className="bg-[#128C7E] px-4 py-1.5 text-[11px] text-white/95 flex items-center justify-between shrink-0 border-t border-emerald-600/40 font-mono">
+              <span>Patient: {appointments[0]?.patientName || "Kamesh M R"} (+91 73971 86456)</span>
+              <span className="text-emerald-200">Table Auto-Sync Active</span>
+            </div>
+
+            {/* WhatsApp Chat Conversation Area */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#EFEAE2] bg-opacity-95">
+              <div className="flex justify-center my-1">
+                <span className="bg-[#E1D7CA] text-[#54656F] text-[10px] px-3 py-1 rounded-md shadow-2xs font-medium">
+                  TODAY • ENCRYPTED TWO-WAY CLINICAL DISPATCH
+                </span>
+              </div>
+
+              {simulatorMessages.map((msg, idx) => (
+                <div
+                  key={idx}
+                  className={`flex ${msg.sender === "patient" ? "justify-end" : "justify-start"} animate-in fade-in slide-in-from-bottom-2 duration-150`}
+                >
+                  <div
+                    className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-xs shadow-xs relative leading-relaxed whitespace-pre-wrap ${
+                      msg.sender === "patient"
+                        ? "bg-[#D9FDD3] text-[#111B21] rounded-tr-xs"
+                        : "bg-white text-[#111B21] rounded-tl-xs border border-black/5"
+                    }`}
+                  >
+                    {msg.text}
+                    <div className="flex items-center justify-end gap-1 mt-1 text-[10px] text-[#667781] font-mono select-none">
+                      <span>{msg.time}</span>
+                      {msg.sender === "patient" && (
+                        <span className="text-[#53BDEB] font-bold">✓✓</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {isSimLoading && (
+                <div className="flex justify-start">
+                  <div className="bg-white rounded-2xl rounded-tl-xs px-4 py-2 shadow-xs border border-black/5 flex items-center gap-1.5 text-xs text-[#667781]">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-bounce"></span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-bounce [animation-delay:0.2s]"></span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-bounce [animation-delay:0.4s]"></span>
+                    <span className="text-[11px] ml-1 font-mono text-emerald-800">Bot thinking & updating table...</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Quick Action Suggestion Chips */}
+            <div className="bg-[#F0F2F5] px-3 py-2 border-t border-[#DFDEEB] flex items-center gap-2 overflow-x-auto shrink-0 scrollbar-none">
+              <span className="text-[10px] text-[#667781] font-bold uppercase shrink-0 font-mono">Quick Reply:</span>
+              <button
+                type="button"
+                onClick={() => handleSendSimulatorMessage("RESCHEDULE")}
+                disabled={isSimLoading}
+                className="px-2.5 py-1 rounded-full bg-white hover:bg-emerald-50 text-emerald-700 border border-emerald-300 text-[11px] font-semibold whitespace-nowrap shadow-2xs transition cursor-pointer disabled:opacity-50"
+              >
+                📅 Reply RESCHEDULE
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSendSimulatorMessage("1")}
+                disabled={isSimLoading}
+                className="px-2.5 py-1 rounded-full bg-white hover:bg-blue-50 text-blue-700 border border-blue-300 text-[11px] font-semibold whitespace-nowrap shadow-2xs transition cursor-pointer disabled:opacity-50"
+              >
+                1️⃣ Pick Slot 1
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSendSimulatorMessage("2")}
+                disabled={isSimLoading}
+                className="px-2.5 py-1 rounded-full bg-white hover:bg-blue-50 text-blue-700 border border-blue-300 text-[11px] font-semibold whitespace-nowrap shadow-2xs transition cursor-pointer disabled:opacity-50"
+              >
+                2️⃣ Pick Slot 2
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSendSimulatorMessage("CONFIRM")}
+                disabled={isSimLoading}
+                className="px-2.5 py-1 rounded-full bg-white hover:bg-purple-50 text-purple-700 border border-purple-300 text-[11px] font-semibold whitespace-nowrap shadow-2xs transition cursor-pointer disabled:opacity-50"
+              >
+                ✅ Confirm
+              </button>
+            </div>
+
+            {/* WhatsApp Bottom Chat Input */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSendSimulatorMessage();
+              }}
+              className="p-2.5 bg-[#F0F2F5] flex items-center gap-2 shrink-0 border-t border-black/5"
+            >
+              <input
+                type="text"
+                value={simInput}
+                onChange={(e) => setSimInput(e.target.value)}
+                placeholder="Type a message (e.g. 'RESCHEDULE' or '1')..."
+                className="flex-1 bg-white border border-[#D1D7DB] rounded-full px-4 py-2 text-xs text-[#111B21] placeholder-[#667781] focus:outline-hidden focus:ring-1 focus:ring-[#075E54]"
+                disabled={isSimLoading}
+              />
+              <button
+                type="submit"
+                disabled={isSimLoading || !simInput.trim()}
+                className="p-2.5 bg-[#075E54] hover:bg-[#128C7E] disabled:opacity-40 text-white rounded-full transition shadow-xs cursor-pointer flex items-center justify-center shrink-0"
+                title="Send as Patient"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </form>
           </div>
         </div>
       )}
