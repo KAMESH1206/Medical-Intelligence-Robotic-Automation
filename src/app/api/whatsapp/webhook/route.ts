@@ -36,16 +36,23 @@ function saveAppointments(apts: Appointment[]) {
 function getBotStates(): Record<string, any> {
   try {
     if (fs.existsSync(CONVERSATION_STATE_FILE)) {
-      return JSON.parse(fs.readFileSync(CONVERSATION_STATE_FILE, "utf-8"));
+      const text = fs.readFileSync(CONVERSATION_STATE_FILE, "utf-8").trim();
+      if (text) {
+        return JSON.parse(text);
+      }
     }
-  } catch {}
+  } catch (e) {
+    console.warn("Error reading bot state:", e);
+  }
   return {};
 }
 
 function saveBotStates(states: Record<string, any>) {
   try {
     fs.writeFileSync(CONVERSATION_STATE_FILE, JSON.stringify(states, null, 2), "utf-8");
-  } catch {}
+  } catch (e) {
+    console.warn("Error saving bot state:", e);
+  }
 }
 
 export async function POST(request: Request) {
@@ -62,10 +69,14 @@ export async function POST(request: Request) {
       bodyText = (params.get("Body") || "").trim();
       profileName = params.get("ProfileName") || "Patient";
     } else {
-      const json = await request.json();
-      from = json.From || json.from || json.phone || "";
-      bodyText = (json.Body || json.body || json.message || "").trim();
-      profileName = json.ProfileName || json.patientName || "Patient";
+      try {
+        const json = await request.json();
+        from = json.From || json.from || json.phone || "";
+        bodyText = (json.Body || json.body || json.message || "").trim();
+        profileName = json.ProfileName || json.patientName || "Patient";
+      } catch (jsonErr) {
+        console.warn("Could not parse JSON body, reading as text fallback:", jsonErr);
+      }
     }
 
     const cleanPhone = from.replace(/[^0-9]/g, "");
