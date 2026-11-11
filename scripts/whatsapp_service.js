@@ -7,6 +7,8 @@ const fs = require("fs");
 
 const PORT = process.env.WHATSAPP_PORT || 8085;
 const SESSION_DIR = path.resolve(process.cwd(), "data/whatsapp_session");
+const APPOINTMENTS_FILE = path.resolve(process.cwd(), "data/appointments_state.json");
+const BOT_STATE_FILE = path.resolve(process.cwd(), "data/whatsapp_bot_state.json");
 
 if (!fs.existsSync(SESSION_DIR)) {
   fs.mkdirSync(SESSION_DIR, { recursive: true });
@@ -17,6 +19,115 @@ let isConnected = false;
 let userPhone = "";
 let latestQr = "";
 
+// Helper to resolve real phone number from LID
+function resolveRealPhone(senderJid) {
+  if (!senderJid) return "";
+  if (senderJid.endsWith("@s.whatsapp.net")) {
+    return senderJid.replace(/[^0-9]/g, "");
+  }
+  if (senderJid.endsWith("@lid")) {
+    const lidId = senderJid.split("@")[0].replace(/[^0-9]/g, "");
+    const reverseFile = path.resolve(SESSION_DIR, `lid-mapping-${lidId}_reverse.json`);
+    if (fs.existsSync(reverseFile)) {
+      try {
+        const raw = JSON.parse(fs.readFileSync(reverseFile, "utf-8"));
+        return String(raw).replace(/[^0-9]/g, "");
+      } catch {}
+    }
+  }
+  return "";
+}
+
+// Helper to parse date string (YYYY-MM-DD or DD/MM/YYYY)
+function parseDate(str) {
+  if (!str) return null;
+  // Match YYYY-MM-DD
+  const m1 = str.match(/(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+  if (m1) {
+    const y = m1[1];
+    const mo = m1[2].padStart(2, "0");
+    const d = m1[3].padStart(2, "0");
+    return `${y}-${mo}-${d}`;
+  }
+  // Match DD-MM-YYYY or DD/MM/YYYY
+  const m2 = str.match(/(\d{1,2})[-/](\d{1,2})[-/](\d{4})/);
+  if (m2) {
+    const d = m2[1].padStart(2, "0");
+    const mo = m2[2].padStart(2, "0");
+    const y = m2[3];
+    return `${y}-${mo}-${d}`;
+  }
+  return null;
+}
+
+// Helper to normalize time string (e.g. 10:00AM -> 10:00 AM)
+function normalizeTime(str) {
+  if (!str) return "10:00 AM";
+  const m = str.match(/(\d{1,2}:\d{2})\s*(AM|PM)?/i);
+  if (!m) return "10:00 AM";
+  const hm = m[1];
+  const ampm = (m[2] || "AM").toUpperCase();
+  return `${hm} ${ampm}`;
+}
+
+// Generate real unbooked open slots after current appointment date
+function generateOpenSlots(currentApt, allAppointments) {
+  const clinic = currentApt?.clinicName || "Sydney Central Clinic";
+  let baseDate = new Date();
+
+  if (currentApt?.preferredDate) {
+    const parsed = new Date(currentApt.preferredDate);
+    if (!isNaN(parsed.getTime())) {
+      baseDate = parsed;
+    }
+  }
+
+  const standardTimes = ["10:00 AM", "11:30 AM", "03:00 PM", "04:30 PM"];
+  const slots = [];
+  let dayOffset = 1;
+
+  while (slots.length < 3 && dayOffset <= 14) {
+    const candidateDate = new Date(baseDate.getTime() + dayOffset * 86400000);
+    const dateStr = candidateDate.toISOString().split("T")[0];
+
+    for (const t of standardTimes) {
+      if (slots.length >= 3) break;
+
+      // Check conflict at this clinic
+      const isBooked = allAppointments.some(
+        (a) =>
+          a.status === "confirmed" &&
+          (a.clinicName || "").toLowerCase() === clinic.toLowerCase() &&
+          a.preferredDate === dateStr &&
+          a.preferredTime === t
+      );
+
+      if (!isBooked) {
+        const slotKey = String(slots.length + 1);
+        slots.push({
+          key: slotKey,
+          date: dateStr,
+          time: t,
+          label: `${dateStr} at ${t}`,
+        });
+      }
+    }
+    dayOffset++;
+  }
+
+  // Fallback if no slots generated
+  if (slots.length === 0) {
+    const d1 = new Date(Date.now() + 86400000 * 3).toISOString().split("T")[0];
+    slots.push(
+      { key: "1", date: d1, time: "10:00 AM", label: `${d1} at 10:00 AM` },
+      { key: "2", date: d1, time: "02:00 PM", label: `${d1} at 02:00 PM` },
+      { key: "3", date: d1, time: "04:00 PM", label: `${d1} at 04:00 PM` }
+    );
+  }
+
+  return slots;
+}
+
 async function startWhatsApp() {
   console.log("\n========================================================");
   console.log("🚀 MIRA WhatsApp Native Engine (Baileys)");
@@ -26,7 +137,7 @@ async function startWhatsApp() {
 
   sock = makeWASocket({
     auth: state,
-    printQRInTerminal: false, // We print manually with qrcode-terminal
+    printQRInTerminal: false,
   });
 
   sock.ev.on("creds.update", saveCreds);
@@ -69,16 +180,10 @@ async function startWhatsApp() {
       const senderJid = msg.key.remoteJid;
       if (!senderJid) continue;
 
-      // Support standard WhatsApp JID (@s.whatsapp.net) and modern Privacy LID JID (@lid)
+      // Only accept private chats
       if (!senderJid.endsWith("@s.whatsapp.net") && !senderJid.endsWith("@lid")) continue;
 
-      let cleanPhone = senderJid.replace(/[^0-9]/g, "");
-      if (msg.key.participant) {
-        const pPhone = msg.key.participant.replace(/[^0-9]/g, "");
-        if (pPhone) cleanPhone = pPhone;
-      }
-
-      const patientName = msg.pushName || "Patient";
+      const patientPushName = msg.pushName || "";
       const messageText = (
         msg.message?.conversation ||
         msg.message?.extendedTextMessage?.text ||
@@ -109,171 +214,202 @@ async function startWhatsApp() {
         lowerText === "3" ||
         lowerText.includes("confirm") ||
         lowerText.includes("yes") ||
-        lowerText.includes("ok");
+        lowerText.includes("ok") ||
+        /\d{4}[-/]\d{1,2}/.test(messageText);
 
       if (msg.key.fromMe && !isBotCommand) {
         continue;
       }
 
-      console.log(`\n📥 [PATIENT INBOUND RECEIVED] JID: ${senderJid} | Name: ${patientName} | Text: "${messageText}"`);
+      // Resolve Real Phone Number from LID mapping
+      const resolvedPhone = resolveRealPhone(senderJid);
+      console.log(`\n📥 [PATIENT INBOUND] JID: ${senderJid} | Resolved Phone: ${resolvedPhone} | PushName: "${patientPushName}" | Msg: "${messageText}"`);
 
-      let replyText = "";
-
-      // 1. First try MIRA Next.js Webhook
-      const webhookPorts = [3000, 3001];
-      for (const p of webhookPorts) {
+      // Load Live Appointments
+      let appointments = [];
+      if (fs.existsSync(APPOINTMENTS_FILE)) {
         try {
-          const res = await fetch(`http://localhost:${p}/api/whatsapp/webhook`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              phone: cleanPhone,
-              message: messageText,
-              patientName,
-            }),
-          });
-          if (res.ok) {
-            const data = await res.json().catch(() => null);
-            if (data && data.reply) {
-              replyText = data.reply;
-              break;
-            }
-          }
+          appointments = JSON.parse(fs.readFileSync(APPOINTMENTS_FILE, "utf-8"));
         } catch {}
       }
 
-      // 2. Direct Built-In Rescheduling Fallback (Guarantees Instant WhatsApp Reply)
-      if (!replyText) {
+      // Match patient accurately
+      let matchingApt = null;
+
+      // 1. Match by resolved phone number
+      if (resolvedPhone) {
+        matchingApt = appointments.find((a) => {
+          const p = (a.patientPhone || "").replace(/[^0-9]/g, "");
+          return p && (resolvedPhone.endsWith(p) || p.endsWith(resolvedPhone));
+        });
+      }
+
+      // 2. Match by PushName (e.g. Paviseetha or Pavithara)
+      if (!matchingApt && patientPushName) {
+        const cleanPush = patientPushName.replace(/[^a-zA-Z]/g, "").toLowerCase();
+        if (cleanPush.length >= 3) {
+          matchingApt = appointments.find((a) => {
+            const cleanAptName = (a.patientName || "").replace(/[^a-zA-Z]/g, "").toLowerCase();
+            const cleanEmail = (a.patientEmail || "").replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+            return (
+              cleanAptName.includes(cleanPush) ||
+              cleanPush.includes(cleanAptName) ||
+              cleanEmail.includes(cleanPush)
+            );
+          });
+        }
+      }
+
+      // 3. Fallback: match by active confirmed appointment
+      if (!matchingApt && appointments.length > 0) {
+        matchingApt = appointments.find((a) => a.status === "confirmed") || appointments[0];
+      }
+
+      if (!matchingApt) {
+        console.warn("No matching appointment found in database.");
+        continue;
+      }
+
+      console.log(`🎯 [MATCHED APPOINTMENT] Patient: ${matchingApt.patientName} | Phone: ${matchingApt.patientPhone} | Clinic: ${matchingApt.clinicName}`);
+
+      // Load Bot Conversation States
+      let botStates = {};
+      if (fs.existsSync(BOT_STATE_FILE)) {
         try {
-          const APPOINTMENTS_FILE = path.resolve(process.cwd(), "data/appointments_state.json");
-          const BOT_STATE_FILE = path.resolve(process.cwd(), "data/whatsapp_bot_state.json");
+          botStates = JSON.parse(fs.readFileSync(BOT_STATE_FILE, "utf-8"));
+        } catch {}
+      }
 
-          let appointments = [];
-          if (fs.existsSync(APPOINTMENTS_FILE)) {
-            appointments = JSON.parse(fs.readFileSync(APPOINTMENTS_FILE, "utf-8"));
-          }
+      const userKey = senderJid;
+      const userState = botStates[userKey] || { step: "idle" };
+      let replyText = "";
 
-          let botStates = {};
-          if (fs.existsSync(BOT_STATE_FILE)) {
-            try {
-              botStates = JSON.parse(fs.readFileSync(BOT_STATE_FILE, "utf-8"));
-            } catch {}
-          }
+      // -------------------------------------------------------------
+      // SCENARIO 1: Patient requests RESCHEDULE
+      // -------------------------------------------------------------
+      if (
+        lowerText.includes("reschedule") ||
+        lowerText.includes("change") ||
+        lowerText.includes("rebook") ||
+        (lowerText.includes("time") && !lowerText.includes("10:00") && !lowerText.includes("11:00"))
+      ) {
+        // Generate real open slots AFTER the patient's existing preferredDate
+        const slots = generateOpenSlots(matchingApt, appointments);
 
-          const userKey = senderJid;
-          const userState = botStates[userKey] || botStates[cleanPhone] || { step: "idle" };
+        botStates[userKey] = {
+          step: "awaiting_slot_selection",
+          aptId: matchingApt.id,
+          patientName: matchingApt.patientName,
+          clinicName: matchingApt.clinicName,
+          slots,
+        };
+        fs.writeFileSync(BOT_STATE_FILE, JSON.stringify(botStates, null, 2), "utf-8");
 
-          // 1. Match by phone
-          let matchingApt = appointments.find((a) => {
-            const p = (a.patientPhone || "").replace(/[^0-9]/g, "");
-            return p && (cleanPhone.includes(p) || p.includes(cleanPhone));
+        replyText = `🏥 *${matchingApt.clinicName.toUpperCase()} CLINICAL SCHEDULING*
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Hello *${matchingApt.patientName}*, we can help you reschedule your appointment at *${matchingApt.clinicName}*.
+
+📅 *Next Available Open Slots:*
+1️⃣ *${slots[0]?.label || "Next day 11:00 AM"}*
+2️⃣ *${slots[1]?.label || "Next day 03:00 PM"}*
+3️⃣ *${slots[2]?.label || "Day after 10:00 AM"}*
+
+👉 *Reply with 1, 2, or 3* to lock in an open slot.
+*(Or reply with your custom date & time, e.g. "2026-11-25 10:00 AM")*`;
+      }
+
+      // -------------------------------------------------------------
+      // SCENARIO 2: Patient selected a slot ("1", "2", "3") OR typed a Custom Date & Time
+      // -------------------------------------------------------------
+      else if (userState.step === "awaiting_slot_selection" || /\d{4}[-/]\d{1,2}/.test(messageText) || lowerText === "1" || lowerText === "2" || lowerText === "3") {
+        let newDate = "";
+        let newTime = "";
+
+        const chosenSlot = userState.slots?.find((s) => s.key === messageText.trim());
+        if (chosenSlot) {
+          newDate = chosenSlot.date;
+          newTime = chosenSlot.time;
+        } else {
+          // Parse custom date and custom time
+          const parsedD = parseDate(messageText);
+          const parsedT = normalizeTime(messageText);
+
+          newDate = parsedD || userState.slots?.[0]?.date || "2026-11-25";
+          newTime = parsedT;
+        }
+
+        // Check Clinic Conflict
+        const targetClinic = userState.clinicName || matchingApt.clinicName;
+        const targetAptId = userState.aptId || matchingApt.id;
+
+        const hasConflict = appointments.some(
+          (a) =>
+            a.id !== targetAptId &&
+            a.status === "confirmed" &&
+            (a.clinicName || "").toLowerCase() === targetClinic.toLowerCase() &&
+            a.preferredDate === newDate &&
+            a.preferredTime === newTime
+        );
+
+        if (hasConflict) {
+          const altSlots = generateOpenSlots(matchingApt, appointments);
+          userState.slots = altSlots;
+          botStates[userKey] = userState;
+          fs.writeFileSync(BOT_STATE_FILE, JSON.stringify(botStates, null, 2), "utf-8");
+
+          replyText = `⚠️ *SLOT ALREADY BOOKED*
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Dear *${matchingApt.patientName}*, the slot on *${newDate} at ${newTime}* at *${targetClinic}* is already booked by another patient.
+
+📅 *Please choose from these verified open slots:*
+1️⃣ *${altSlots[0]?.label}*
+2️⃣ *${altSlots[1]?.label}*
+3️⃣ *${altSlots[2]?.label}*
+
+👉 Reply with 1, 2, or 3 (or enter another date & time).`;
+        } else {
+          // No Conflict! Update the EXACT appointment record
+          const updatedAppointments = appointments.map((a) => {
+            if (a.id === targetAptId) {
+              return {
+                ...a,
+                preferredDate: newDate,
+                preferredTime: newTime,
+                status: "rescheduled",
+                notes: `[Rescheduled via WhatsApp Bot on ${new Date().toLocaleDateString()}]`,
+                updatedAt: new Date().toISOString(),
+              };
+            }
+            return a;
           });
 
-          // 2. Match by PushName (e.g. "Pavithara")
-          if (!matchingApt && patientName && patientName !== "Patient") {
-            const pLower = patientName.toLowerCase();
-            matchingApt = appointments.find((a) => {
-              const nameLower = (a.patientName || "").toLowerCase();
-              return nameLower.includes(pLower) || pLower.includes(nameLower);
-            });
-          }
+          fs.writeFileSync(APPOINTMENTS_FILE, JSON.stringify(updatedAppointments, null, 2), "utf-8");
+          delete botStates[userKey];
+          fs.writeFileSync(BOT_STATE_FILE, JSON.stringify(botStates, null, 2), "utf-8");
 
-          // 3. Fallback to latest active appointment
-          if (!matchingApt) {
-            matchingApt = appointments.find((a) => a.status === "confirmed" || a.status === "requested") || appointments[0];
-          }
-
-          if (
-            lowerText.includes("reschedule") ||
-            lowerText.includes("change") ||
-            lowerText.includes("rebook") ||
-            lowerText.includes("time") ||
-            lowerText.includes("date")
-          ) {
-            const tomorrow = new Date(Date.now() + 86400000);
-            const dayAfter = new Date(Date.now() + 86400000 * 2);
-            const d1 = tomorrow.toISOString().split("T")[0];
-            const d2 = dayAfter.toISOString().split("T")[0];
-
-            const slots = [
-              { key: "1", date: d1, time: "11:00 AM", label: `${d1} at 11:00 AM` },
-              { key: "2", date: d1, time: "03:00 PM", label: `${d1} at 03:00 PM` },
-              { key: "3", date: d2, time: "10:00 AM", label: `${d2} at 10:00 AM` },
-            ];
-
-            const targetName = matchingApt?.patientName || patientName;
-            const targetClinic = matchingApt?.clinicName || "Apollo";
-
-            botStates[userKey] = {
-              step: "awaiting_slot_selection",
-              aptId: matchingApt?.id,
-              patientName: targetName,
-              clinicName: targetClinic,
-              slots,
-            };
-            botStates[cleanPhone] = botStates[userKey];
-            fs.writeFileSync(BOT_STATE_FILE, JSON.stringify(botStates, null, 2), "utf-8");
-
-            replyText = `🏥 *${targetClinic.toUpperCase()} CLINICAL BOT*
-━━━━━━━━━━━━━━━━━━━━
-Hello *${targetName}*, we are happy to assist with rescheduling your appointment.
-
-📅 *Available Open Slots:*
-1️⃣ *${slots[0].label}*
-2️⃣ *${slots[1].label}*
-3️⃣ *${slots[2].label}*
-
-👉 *Please reply with 1, 2, or 3* to select your new slot.
-*(Or reply with your custom date & time, e.g. "2026-11-18 04:00 PM")*`;
-          } else if (userState.step === "awaiting_slot_selection") {
-            const chosenSlot = userState.slots?.find((s) => s.key === messageText.trim());
-            let newDate = "";
-            let newTime = "";
-
-            if (chosenSlot) {
-              newDate = chosenSlot.date;
-              newTime = chosenSlot.time;
-            } else {
-              newDate = userState.slots?.[0]?.date || "2026-11-15";
-              newTime = messageText.includes("PM") || messageText.includes("AM") ? messageText : "11:00 AM";
-            }
-
-            const targetAptId = userState.aptId || matchingApt?.id;
-            const updatedAppointments = appointments.map((a) => {
-              if (a.id === targetAptId) {
-                return {
-                  ...a,
-                  preferredDate: newDate,
-                  preferredTime: newTime,
-                  status: "rescheduled",
-                  notes: (a.notes ? a.notes + " • " : "") + `[Rescheduled via WhatsApp Bot to ${newDate} ${newTime}]`,
-                  updatedAt: new Date().toISOString(),
-                };
-              }
-              return a;
-            });
-
-            fs.writeFileSync(APPOINTMENTS_FILE, JSON.stringify(updatedAppointments, null, 2), "utf-8");
-            delete botStates[userKey];
-            delete botStates[cleanPhone];
-            fs.writeFileSync(BOT_STATE_FILE, JSON.stringify(botStates, null, 2), "utf-8");
-
-            replyText = `✅ *APPOINTMENT RESCHEDULED & CONFIRMED!*
-━━━━━━━━━━━━━━━━━━━━
-Dear *${userState.patientName || matchingApt?.patientName || patientName}*,
+          replyText = `✅ *APPOINTMENT RESCHEDULED & CONFIRMED!*
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Dear *${matchingApt.patientName}*,
 
 Your healthcare appointment has been successfully updated in our clinic database:
 
-🏥 *Clinic:* ${userState.clinicName || matchingApt?.clinicName || "Apollo"}
+🏥 *Clinic:* ${targetClinic}
 📅 *New Date:* ${newDate}
 ⏰ *New Time:* ${newTime}
 🔖 *Status:* CONFIRMED & RESCHEDULED
 
 Our clinic management dashboard and medical staff have been notified in real time!`;
-          }
-        } catch (botErr) {
-          console.error("Local bot fallback error:", botErr);
         }
+      }
+
+      // -------------------------------------------------------------
+      // SCENARIO 3: General Confirmations
+      // -------------------------------------------------------------
+      else if (lowerText.includes("yes") || lowerText.includes("ok") || lowerText.includes("confirm")) {
+        replyText = `✅ *Thank you, ${matchingApt.patientName}!*
+Your appointment at *${matchingApt.clinicName}* on *${matchingApt.preferredDate}* at *${matchingApt.preferredTime}* is confirmed.
+
+Reply *RESCHEDULE* if you ever need to change it.`;
       }
 
       if (replyText) {
@@ -355,4 +491,3 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, () => {
   startWhatsApp();
 });
-

@@ -1,1 +1,34 @@
-[]
+[
+  {
+    "id": "apt_1794388227993",
+    "patientId": "pat_1794388227993",
+    "patientName": "KAMESH M R",
+    "patientEmail": "mrkamesh8@gmail.com",
+    "patientPhone": "06382486456",
+    "clinicName": "Kauvery",
+    "preferredDate": "2026-11-13",
+    "preferredTime": "10:00 AM",
+    "appointmentType": "General Consultation",
+    "status": "confirmed",
+    "notes": "",
+    "createdAt": "2026-11-11T09:10:28.012Z",
+    "updatedAt": "2026-11-11T09:10:30.399Z",
+    "isDemoData": false
+  },
+  {
+    "id": "apt_1794388161369",
+    "patientId": "pat_1794388161368",
+    "patientName": "Pavithara",
+    "patientEmail": "paviseetha21@gmail.com",
+    "patientPhone": "9342246331",
+    "clinicName": "Apollo",
+    "preferredDate": "2026-11-25",
+    "preferredTime": "10:00 AM",
+    "appointmentType": "General Consultation",
+    "status": "rescheduled",
+    "notes": "[Rescheduled via WhatsApp Bot on 11/11/2026 to 2026-11-25 10:00 AM]",
+    "createdAt": "2026-11-11T09:09:21.412Z",
+    "updatedAt": "2026-11-11T09:45:00.000Z",
+    "isDemoData": false
+  }
+]
