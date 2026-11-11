@@ -21,6 +21,32 @@ export async function POST(request: Request) {
     const encodedText = encodeURIComponent(messageText || `Appointment confirmed for ${patientName} at ${clinicName} on ${date} at ${time}.`);
     const directUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodedText}`;
 
+    // 0. Check for Local Native WhatsApp Engine (Baileys on Port 8085)
+    try {
+      const nativeRes = await fetch("http://localhost:8085/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phone: cleanPhone,
+          text: messageText || `Appointment confirmed for ${patientName} at ${clinicName} on ${date} at ${time}.`,
+        }),
+      });
+      if (nativeRes.ok) {
+        const nativeData = await nativeRes.json();
+        console.log(`[NATIVE WHATSAPP SUCCESS] Dispatched from phone to +${cleanPhone}, ID: ${nativeData.messageId}`);
+        return NextResponse.json({
+          success: true,
+          provider: "Native WhatsApp Mobile Engine (Direct Phone)",
+          messageId: nativeData.messageId,
+          phone: cleanPhone,
+          message: `Automated WhatsApp delivered to +${cleanPhone} directly from your WhatsApp number!`,
+          directUrl,
+        });
+      }
+    } catch {
+      // Local engine not active, continue to Twilio
+    }
+
     // 1. Check for Twilio WhatsApp Credentials (Top Priority Direct Dispatch)
     const twilioSid = process.env.TWILIO_ACCOUNT_SID;
     const twilioAuth = process.env.TWILIO_AUTH_TOKEN;

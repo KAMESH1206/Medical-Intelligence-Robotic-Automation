@@ -6,12 +6,12 @@
     "patientEmail": "mrkamesh8@gmail.com",
     "patientPhone": "+91 73971 86456",
     "clinicName": "Sydney Central Clinic",
-    "preferredDate": "2026-11-14",
-    "preferredTime": "10:00 AM",
+    "preferredDate": "2026-11-12",
+    "preferredTime": "11:00 AM",
     "appointmentType": "General Consultation",
-    "status": "confirmed",
-    "notes": "First test appointment",
+    "status": "rescheduled",
+    "notes": "First test appointment • [Rescheduled via WhatsApp Bot on 11/11/2026]",
     "createdAt": "2026-11-11T06:48:25.730Z",
-    "updatedAt": "2026-11-11T06:48:25.731Z"
+    "updatedAt": "2026-11-11T06:58:30.469Z"
   }
 ]
