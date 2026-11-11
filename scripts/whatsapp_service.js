@@ -45,9 +45,9 @@ async function startWhatsApp() {
     if (connection === "close") {
       isConnected = false;
       const shouldReconnect = (lastDisconnect?.error)?.output?.statusCode !== DisconnectReason.loggedOut;
-      console.log("⚠️ Connection closed. Reconnecting...", shouldReconnect);
+      console.log("⚠️ Connection closed. Reconnecting in 3 seconds...", shouldReconnect);
       if (shouldReconnect) {
-        startWhatsApp();
+        setTimeout(startWhatsApp, 3000);
       } else {
         console.log("❌ Logged out. Delete 'data/whatsapp_session' to link a new number.");
       }
@@ -67,13 +67,23 @@ async function startWhatsApp() {
 
     for (const msg of messages) {
       const senderJid = msg.key.remoteJid;
-      if (!senderJid || !senderJid.endsWith("@s.whatsapp.net")) continue;
+      if (!senderJid) continue;
 
-      const cleanPhone = senderJid.replace("@s.whatsapp.net", "");
+      // Support standard WhatsApp JID (@s.whatsapp.net) and modern Privacy LID JID (@lid)
+      if (!senderJid.endsWith("@s.whatsapp.net") && !senderJid.endsWith("@lid")) continue;
+
+      let cleanPhone = senderJid.replace(/[^0-9]/g, "");
+      if (msg.key.participant) {
+        const pPhone = msg.key.participant.replace(/[^0-9]/g, "");
+        if (pPhone) cleanPhone = pPhone;
+      }
+
       const patientName = msg.pushName || "Patient";
       const messageText = (
         msg.message?.conversation ||
         msg.message?.extendedTextMessage?.text ||
+        msg.message?.buttonsResponseMessage?.selectedButtonId ||
+        msg.message?.listResponseMessage?.singleSelectReply?.selectedRowId ||
         ""
       ).trim();
 
@@ -81,14 +91,14 @@ async function startWhatsApp() {
 
       // Avoid infinite loop on bot's own output
       if (
-        messageText.includes("MIRA HEALTHCARE") ||
+        messageText.includes("CLINICAL BOT") ||
         messageText.includes("APPOINTMENT RESCHEDULED") ||
         messageText.includes("Available Open Slots")
       ) {
         continue;
       }
 
-      // If message is from self, only proceed if it is a command like RESCHEDULE or slot choice
+      // If message is from self, only proceed if it is an explicit command
       const lowerText = messageText.toLowerCase();
       const isBotCommand =
         lowerText.includes("reschedule") ||
@@ -105,12 +115,12 @@ async function startWhatsApp() {
         continue;
       }
 
-      console.log(`\n📥 [PATIENT INBOUND] From: +${cleanPhone} (${patientName}): "${messageText}"`);
+      console.log(`\n📥 [PATIENT INBOUND RECEIVED] JID: ${senderJid} | Name: ${patientName} | Text: "${messageText}"`);
+
+      let replyText = "";
 
       // 1. First try MIRA Next.js Webhook
-      let replyText = "";
       const webhookPorts = [3000, 3001];
-
       for (const p of webhookPorts) {
         try {
           const res = await fetch(`http://localhost:${p}/api/whatsapp/webhook`, {
@@ -150,12 +160,28 @@ async function startWhatsApp() {
             } catch {}
           }
 
-          const userState = botStates[cleanPhone] || { step: "idle" };
+          const userKey = senderJid;
+          const userState = botStates[userKey] || botStates[cleanPhone] || { step: "idle" };
 
+          // 1. Match by phone
           let matchingApt = appointments.find((a) => {
             const p = (a.patientPhone || "").replace(/[^0-9]/g, "");
-            return p && (p.endsWith(cleanPhone) || cleanPhone.endsWith(p));
-          }) || appointments[0];
+            return p && (cleanPhone.includes(p) || p.includes(cleanPhone));
+          });
+
+          // 2. Match by PushName (e.g. "Pavithara")
+          if (!matchingApt && patientName && patientName !== "Patient") {
+            const pLower = patientName.toLowerCase();
+            matchingApt = appointments.find((a) => {
+              const nameLower = (a.patientName || "").toLowerCase();
+              return nameLower.includes(pLower) || pLower.includes(nameLower);
+            });
+          }
+
+          // 3. Fallback to latest active appointment
+          if (!matchingApt) {
+            matchingApt = appointments.find((a) => a.status === "confirmed" || a.status === "requested") || appointments[0];
+          }
 
           if (
             lowerText.includes("reschedule") ||
@@ -175,38 +201,52 @@ async function startWhatsApp() {
               { key: "3", date: d2, time: "10:00 AM", label: `${d2} at 10:00 AM` },
             ];
 
-            botStates[cleanPhone] = {
+            const targetName = matchingApt?.patientName || patientName;
+            const targetClinic = matchingApt?.clinicName || "Apollo";
+
+            botStates[userKey] = {
               step: "awaiting_slot_selection",
               aptId: matchingApt?.id,
-              patientName: matchingApt?.patientName || patientName,
-              clinicName: matchingApt?.clinicName || "Sydney Central Clinic",
+              patientName: targetName,
+              clinicName: targetClinic,
               slots,
             };
+            botStates[cleanPhone] = botStates[userKey];
             fs.writeFileSync(BOT_STATE_FILE, JSON.stringify(botStates, null, 2), "utf-8");
 
-            replyText = `🏥 *MIRA HEALTHCARE CLINICAL BOT*
+            replyText = `🏥 *${targetClinic.toUpperCase()} CLINICAL BOT*
 ━━━━━━━━━━━━━━━━━━━━
-Hello *${matchingApt?.patientName || patientName}*, we are happy to assist with rescheduling your appointment at *${matchingApt?.clinicName || "Sydney Central Clinic"}*.
+Hello *${targetName}*, we are happy to assist with rescheduling your appointment.
 
 📅 *Available Open Slots:*
 1️⃣ *${slots[0].label}*
 2️⃣ *${slots[1].label}*
 3️⃣ *${slots[2].label}*
 
-👉 *Please reply with 1, 2, or 3* to select your new slot.`;
+👉 *Please reply with 1, 2, or 3* to select your new slot.
+*(Or reply with your custom date & time, e.g. "2026-11-18 04:00 PM")*`;
           } else if (userState.step === "awaiting_slot_selection") {
             const chosenSlot = userState.slots?.find((s) => s.key === messageText.trim());
-            const newDate = chosenSlot ? chosenSlot.date : "2026-11-14";
-            const newTime = chosenSlot ? chosenSlot.time : "11:00 AM";
+            let newDate = "";
+            let newTime = "";
 
+            if (chosenSlot) {
+              newDate = chosenSlot.date;
+              newTime = chosenSlot.time;
+            } else {
+              newDate = userState.slots?.[0]?.date || "2026-11-15";
+              newTime = messageText.includes("PM") || messageText.includes("AM") ? messageText : "11:00 AM";
+            }
+
+            const targetAptId = userState.aptId || matchingApt?.id;
             const updatedAppointments = appointments.map((a) => {
-              if (a.id === userState.aptId || a.id === matchingApt?.id) {
+              if (a.id === targetAptId) {
                 return {
                   ...a,
                   preferredDate: newDate,
                   preferredTime: newTime,
                   status: "rescheduled",
-                  notes: (a.notes ? a.notes + " • " : "") + `[Rescheduled via WhatsApp Bot on ${new Date().toLocaleDateString()}]`,
+                  notes: (a.notes ? a.notes + " • " : "") + `[Rescheduled via WhatsApp Bot to ${newDate} ${newTime}]`,
                   updatedAt: new Date().toISOString(),
                 };
               }
@@ -214,21 +254,22 @@ Hello *${matchingApt?.patientName || patientName}*, we are happy to assist with 
             });
 
             fs.writeFileSync(APPOINTMENTS_FILE, JSON.stringify(updatedAppointments, null, 2), "utf-8");
+            delete botStates[userKey];
             delete botStates[cleanPhone];
             fs.writeFileSync(BOT_STATE_FILE, JSON.stringify(botStates, null, 2), "utf-8");
 
-            replyText = `✅ *APPOINTMENT RESCHEDULED!*
+            replyText = `✅ *APPOINTMENT RESCHEDULED & CONFIRMED!*
 ━━━━━━━━━━━━━━━━━━━━
-Dear *${userState.patientName || patientName}*,
+Dear *${userState.patientName || matchingApt?.patientName || patientName}*,
 
-Your healthcare appointment has been updated in our clinic database:
+Your healthcare appointment has been successfully updated in our clinic database:
 
-🏥 *Clinic:* ${userState.clinicName}
+🏥 *Clinic:* ${userState.clinicName || matchingApt?.clinicName || "Apollo"}
 📅 *New Date:* ${newDate}
 ⏰ *New Time:* ${newTime}
 🔖 *Status:* CONFIRMED & RESCHEDULED
 
-Our clinic management dashboard has been notified in real time!`;
+Our clinic management dashboard and medical staff have been notified in real time!`;
           }
         } catch (botErr) {
           console.error("Local bot fallback error:", botErr);
@@ -236,7 +277,7 @@ Our clinic management dashboard has been notified in real time!`;
       }
 
       if (replyText) {
-        console.log(`🤖 [BOT REPLYING to +${cleanPhone}]:\n${replyText}\n`);
+        console.log(`🤖 [BOT REPLYING to ${senderJid}]:\n${replyText}\n`);
         await sock.sendMessage(senderJid, { text: replyText });
       }
     }
