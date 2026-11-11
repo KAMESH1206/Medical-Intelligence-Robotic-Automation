@@ -117,7 +117,7 @@ Automated Multi-Channel Dispatch System (ISO 27001 / HIPAA Compliant)`,
     const matchedPatient = patients.find(
       (p) => p.name.toLowerCase() === apt.patientName.toLowerCase()
     );
-    const phone = apt.patientPhone || matchedPatient?.phone || "+91 98765 43210";
+    const phone = apt.patientPhone || matchedPatient?.phone || "+91 73971 86456";
     const refCode = `APT-${apt.id.slice(-6).toUpperCase()}`;
 
     const messageText = `🏥 *MIRA HEALTHCARE OPERATIONS*
@@ -244,7 +244,7 @@ Powered by MIRA Ops Intelligence`,
     const matchedPatient = patients.find(
       (p) => p.name.toLowerCase() === apt.patientName.toLowerCase()
     );
-    const phone = apt.patientPhone || matchedPatient?.phone || "+91 98765 43210";
+    const phone = apt.patientPhone || matchedPatient?.phone || "+91 73971 86456";
     const refCode = `APT-${apt.id.slice(-6).toUpperCase()}`;
 
     const messageText = `⚠️ *MIRA HEALTHCARE - APPOINTMENT CANCELLED*
@@ -353,7 +353,7 @@ If this cancellation was made in error or you would like to reschedule, please r
   const [formData, setFormData] = useState({
     patientName: "",
     patientEmail: "mrkamesh8@gmail.com",
-    patientPhone: "+91 98765 43210",
+    patientPhone: "+91 73971 86456",
     clinicName: CLINIC_LOCATIONS[0],
     preferredDate: "2026-11-14",
     preferredTime: "10:00 AM",

@@ -8,11 +8,9 @@ export async function POST(request: Request) {
     let cleanPhone = (phone || "").replace(/[^0-9]/g, "");
 
     // Fallback: If dummy number (9876543210) or empty, check .env.local for WHATSAPP_PHONE
-    const configuredPhone = (process.env.WHATSAPP_PHONE || "").replace(/[^0-9]/g, "");
+    const configuredPhone = (process.env.WHATSAPP_PHONE || "917397186456").replace(/[^0-9]/g, "");
     if (!cleanPhone || cleanPhone.includes("9876543210") || cleanPhone.length < 10) {
-      if (configuredPhone) {
-        cleanPhone = configuredPhone;
-      }
+      cleanPhone = configuredPhone;
     }
 
     // Default to Indian country code 91 if 10 digits provided without country code
@@ -23,41 +21,28 @@ export async function POST(request: Request) {
     const encodedText = encodeURIComponent(messageText || `Appointment confirmed for ${patientName} at ${clinicName} on ${date} at ${time}.`);
     const directUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodedText}`;
 
-    // 1. Check for Free CallMeBot Background API
-    const callmebotApiKey = process.env.CALLMEBOT_API_KEY;
-    if (callmebotApiKey && cleanPhone) {
-      try {
-        const cmbUrl = `https://api.callmebot.com/whatsapp.php?phone=${cleanPhone}&text=${encodedText}&apikey=${callmebotApiKey.trim()}`;
-        const cmbRes = await fetch(cmbUrl, { method: "GET" });
-        if (cmbRes.ok) {
-          return NextResponse.json({
-            success: true,
-            provider: "CallMeBot",
-            phone: cleanPhone,
-            message: `Automated WhatsApp delivered to +${cleanPhone} via CallMeBot!`,
-            directUrl,
-          });
-        }
-      } catch (e) {
-        console.warn("CallMeBot dispatch failed:", e);
-      }
-    }
-
-    // 2. Check for Twilio WhatsApp Credentials
+    // 1. Check for Twilio WhatsApp Credentials (Top Priority Direct Dispatch)
     const twilioSid = process.env.TWILIO_ACCOUNT_SID;
     const twilioAuth = process.env.TWILIO_AUTH_TOKEN;
-    const twilioFrom = process.env.TWILIO_WHATSAPP_NUMBER || "whatsapp:+14155238886";
+    const twilioFrom = process.env.TWILIO_WHATSAPP_NUMBER || "whatsapp:+17372508034";
+    const twilioContentSid = process.env.TWILIO_CONTENT_SID || "HXfe5ab5f00277942d4d4200328b4d403c";
 
     if (twilioSid && twilioAuth && cleanPhone) {
       try {
-        const authHeader = Buffer.from(`${twilioSid}:${twilioAuth}`).toString("base64");
+        const authHeader = Buffer.from(`${twilioSid.trim()}:${twilioAuth.trim()}`).toString("base64");
+        
         const bodyParams = new URLSearchParams({
-          From: twilioFrom.startsWith("whatsapp:") ? twilioFrom : `whatsapp:${twilioFrom}`,
+          From: twilioFrom.startsWith("whatsapp:") ? twilioFrom.trim() : `whatsapp:${twilioFrom.trim()}`,
           To: `whatsapp:+${cleanPhone}`,
-          Body: messageText,
         });
 
-        const twilioRes = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Messages.json`, {
+        if (twilioContentSid) {
+          bodyParams.append("ContentSid", twilioContentSid.trim());
+        } else {
+          bodyParams.append("Body", messageText);
+        }
+
+        const twilioRes = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${twilioSid.trim()}/Messages.json`, {
           method: "POST",
           headers: {
             Authorization: `Basic ${authHeader}`,
@@ -66,63 +51,66 @@ export async function POST(request: Request) {
           body: bodyParams.toString(),
         });
 
+        const twilioData = await twilioRes.json();
         if (twilioRes.ok) {
-          const twilioData = await twilioRes.json();
+          console.log(`[TWILIO WHATSAPP SUCCESS] Dispatched to +${cleanPhone}, SID: ${twilioData.sid}`);
           return NextResponse.json({
             success: true,
-            provider: "Twilio",
+            provider: "Twilio WhatsApp Cloud",
             messageId: twilioData.sid,
             phone: cleanPhone,
-            message: `Automated WhatsApp delivered to +${cleanPhone} via Twilio API!`,
+            message: `Automated WhatsApp delivered to +${cleanPhone} via Twilio!`,
             directUrl,
           });
+        } else {
+          console.warn("[TWILIO ERROR]:", twilioData);
         }
       } catch (twErr) {
-        console.warn("Twilio WhatsApp dispatch failed:", twErr);
+        console.warn("[TWILIO DISPATCH FAILED]:", twErr);
       }
     }
 
-    // 3. Check for Meta Cloud API Credentials
-    const metaToken = process.env.META_WHATSAPP_TOKEN;
-    const metaPhoneId = process.env.META_PHONE_ID;
-    if (metaToken && metaPhoneId && cleanPhone) {
+    // 2. Check for n8n Workflow Automation Webhook
+    const n8nWebhookUrl = process.env.N8N_WHATSAPP_WEBHOOK_URL;
+    if (n8nWebhookUrl) {
       try {
-        const metaRes = await fetch(`https://graph.facebook.com/v19.0/${metaPhoneId}/messages`, {
+        const n8nRes = await fetch(n8nWebhookUrl.trim(), {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${metaToken}`,
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            messaging_product: "whatsapp",
-            to: cleanPhone,
-            type: "text",
-            text: { body: messageText },
+            event: "appointment_notification",
+            phone: cleanPhone,
+            patientName,
+            clinicName,
+            date,
+            time,
+            messageText,
+            timestamp: new Date().toISOString(),
           }),
         });
 
-        if (metaRes.ok) {
+        if (n8nRes.ok) {
           return NextResponse.json({
             success: true,
-            provider: "Meta Cloud API",
+            provider: "n8n Automation Engine",
             phone: cleanPhone,
-            message: `Automated WhatsApp delivered to +${cleanPhone} via Meta Cloud API!`,
+            message: `Automated WhatsApp payload delivered to n8n Webhook for +${cleanPhone}!`,
             directUrl,
           });
         }
-      } catch (metaErr) {
-        console.warn("Meta Cloud API dispatch failed:", metaErr);
+      } catch (n8nErr) {
+        console.warn("n8n Webhook dispatch failed:", n8nErr);
       }
     }
 
-    // Default Fallback: Instant Universal WhatsApp Link
+    // 3. Fallback: Return Universal WhatsApp Link
     return NextResponse.json({
       success: true,
       provider: "Universal WhatsApp Protocol",
       phone: cleanPhone,
       isDirectLaunch: true,
       directUrl,
-      message: `WhatsApp message prepared for +${cleanPhone}! Opening WhatsApp conversation...`,
+      message: `WhatsApp alert prepared for +${cleanPhone}!`,
     });
   } catch (error: unknown) {
     const err = error instanceof Error ? error.message : "Failed to prepare WhatsApp message";
