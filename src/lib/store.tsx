@@ -755,6 +755,12 @@ export function MiraStoreProvider({ children }: { children: React.ReactNode }) {
     setPromptExecutions(SEED_PROMPT_EXECUTIONS);
     setAuditLogs(SEED_AUDIT_LOGS);
     logAudit("settings_changed", "system", undefined, { action: "reset_to_seed_data" });
+    // Reset server appointments
+    fetch("/api/appointments", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "reset" }),
+    }).catch(() => {});
   };
 
   const clearAllRecords = () => {
@@ -776,6 +782,8 @@ export function MiraStoreProvider({ children }: { children: React.ReactNode }) {
       promptExecutions: [],
     });
     logAudit("settings_changed", "system", undefined, { action: "cleared_all_records_for_real_data" });
+    // Clear server appointments
+    fetch("/api/appointments?id=all", { method: "DELETE" }).catch(() => {});
   };
 
   return (

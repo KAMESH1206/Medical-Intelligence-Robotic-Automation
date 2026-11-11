@@ -63,7 +63,16 @@ export async function POST(request: Request) {
       );
     }
 
+    if (body.action === "reset") {
+      saveLiveAppointments(SEED_APPOINTMENTS);
+      return NextResponse.json({ success: true, message: "Appointments reset to seeds.", data: SEED_APPOINTMENTS });
+    }
+
     if (body.action === "delete" && body.id) {
+      if (body.id === "all") {
+        saveLiveAppointments([]);
+        return NextResponse.json({ success: true, message: "All appointments deleted.", count: 0 });
+      }
       const updated = appointments.filter((a) => a.id !== body.id);
       saveLiveAppointments(updated);
       return NextResponse.json({ success: true, message: "Appointment deleted.", count: updated.length });
@@ -116,6 +125,10 @@ export async function DELETE(request: Request) {
     const id = searchParams.get("id");
     if (!id) {
       return NextResponse.json({ success: false, error: "Missing id" }, { status: 400 });
+    }
+    if (id === "all") {
+      saveLiveAppointments([]);
+      return NextResponse.json({ success: true, message: "All appointments cleared.", count: 0 });
     }
     const appointments = getLiveAppointments();
     const updated = appointments.filter((a) => a.id !== id);
