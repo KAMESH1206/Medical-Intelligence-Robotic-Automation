@@ -28,6 +28,8 @@
 *.db
 *.sqlite
 backend/*.db
+data/whatsapp_session/
+data/baileys_auth/
 
 # debug
 npm-debug.log*
