@@ -252,7 +252,7 @@ Need to reschedule? Reply *RESCHEDULE* to this WhatsApp or contact reception.`;
       // safe fallback
     }
 
-    // 2. Call Dedicated WhatsApp API Route (Direct Twilio Background Dispatch - No Manual Popups)
+    // 2. Call Dedicated WhatsApp API Route (Direct Native Background Dispatch - No Manual Popups)
     try {
       const waRes = await fetch("/api/send-whatsapp", {
         method: "POST",
@@ -262,7 +262,7 @@ Need to reschedule? Reply *RESCHEDULE* to this WhatsApp or contact reception.`;
       const waData = await waRes.json();
       if (waData.success) {
         setEmailToast({
-          message: `✓ Auto-Dispatched: Live Gmail Delivered to ${email.to} & WhatsApp alert automatically sent to ${whatsapp.phone} via Twilio!`,
+          message: `✓ Auto-Dispatched: Live Gmail Delivered to ${email.to} & WhatsApp alert automatically sent to ${whatsapp.phone} from clinic WhatsApp!`,
           email,
         });
       }
@@ -1300,7 +1300,7 @@ If this cancellation was made in error or you would like to reschedule, please r
                     <span className="bg-emerald-500/40 text-emerald-100 text-[10px] px-1.5 py-0.2 rounded font-mono">VERIFIED</span>
                   </div>
                   <p className="text-[11px] text-emerald-100/90 leading-tight flex items-center gap-1">
-                    <span>Twilio Sender: +1 (737) 250-8034</span>
+                    <span>Clinic Sender: +91 73971 86456</span>
                     <span>•</span>
                     <span className="text-emerald-300">Online 24/7</span>
                   </p>

@@ -213,31 +213,10 @@ Hello *${profileName}*!
 • For immediate emergencies, please call emergency services (000 / 911).`;
     }
 
-    const isTwilioForm = contentType.includes("application/x-www-form-urlencoded");
-
-    // If called via Twilio inbound webhook, returning TwiML sends the reply automatically.
-    // If called via an external trigger where REST dispatch is desired:
-    const twilioSid = process.env.TWILIO_ACCOUNT_SID;
-    const twilioAuth = process.env.TWILIO_AUTH_TOKEN;
-    const twilioFrom = process.env.TWILIO_WHATSAPP_NUMBER || "whatsapp:+17372508034";
-
-    // Return TwiML XML response for Twilio webhook compatibility
-    const twimlResponse = `<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-  <Message>${replyMessage.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</Message>
-</Response>`;
-
-    if (!isTwilioForm) {
-      return NextResponse.json({
-        success: true,
-        reply: replyMessage,
-        twiml: twimlResponse,
-      });
-    }
-
-    return new Response(twimlResponse, {
-      status: 200,
-      headers: { "Content-Type": "text/xml" },
+    // Return standard response for MIRA Dashboard and Native WhatsApp Service
+    return NextResponse.json({
+      success: true,
+      reply: replyMessage,
     });
   } catch (error: unknown) {
     console.error("[WHATSAPP WEBHOOK ERROR]:", error);

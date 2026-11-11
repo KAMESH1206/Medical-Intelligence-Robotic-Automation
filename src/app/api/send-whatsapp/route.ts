@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     const encodedText = encodeURIComponent(messageText || `Appointment confirmed for ${patientName} at ${clinicName} on ${date} at ${time}.`);
     const directUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodedText}`;
 
-    // 0. Check for Local Native WhatsApp Engine (Baileys on Port 8085)
+    // 0. Primary: Local Native WhatsApp Engine (Port 8085)
     try {
       const nativeRes = await fetch("http://localhost:8085/send", {
         method: "POST",
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
         console.log(`[NATIVE WHATSAPP SUCCESS] Dispatched from phone to +${cleanPhone}, ID: ${nativeData.messageId}`);
         return NextResponse.json({
           success: true,
-          provider: "Native WhatsApp Mobile Engine (Direct Phone)",
+          provider: "Native WhatsApp Engine (Your Phone: +91 73971 86456)",
           messageId: nativeData.messageId,
           phone: cleanPhone,
           message: `Automated WhatsApp delivered to +${cleanPhone} directly from your WhatsApp number!`,
@@ -44,59 +44,10 @@ export async function POST(request: Request) {
         });
       }
     } catch {
-      // Local engine not active, continue to Twilio
+      // Local engine not active, fallback to direct url
     }
 
-    // 1. Check for Twilio WhatsApp Credentials (Top Priority Direct Dispatch)
-    const twilioSid = process.env.TWILIO_ACCOUNT_SID;
-    const twilioAuth = process.env.TWILIO_AUTH_TOKEN;
-    const twilioFrom = process.env.TWILIO_WHATSAPP_NUMBER || "whatsapp:+17372508034";
-    const twilioContentSid = process.env.TWILIO_CONTENT_SID || "HXfe5ab5f00277942d4d4200328b4d403c";
-
-    if (twilioSid && twilioAuth && cleanPhone) {
-      try {
-        const authHeader = Buffer.from(`${twilioSid.trim()}:${twilioAuth.trim()}`).toString("base64");
-        
-        const bodyParams = new URLSearchParams({
-          From: twilioFrom.startsWith("whatsapp:") ? twilioFrom.trim() : `whatsapp:${twilioFrom.trim()}`,
-          To: `whatsapp:+${cleanPhone}`,
-        });
-
-        if (twilioContentSid) {
-          bodyParams.append("ContentSid", twilioContentSid.trim());
-        } else {
-          bodyParams.append("Body", messageText);
-        }
-
-        const twilioRes = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${twilioSid.trim()}/Messages.json`, {
-          method: "POST",
-          headers: {
-            Authorization: `Basic ${authHeader}`,
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-          body: bodyParams.toString(),
-        });
-
-        const twilioData = await twilioRes.json();
-        if (twilioRes.ok) {
-          console.log(`[TWILIO WHATSAPP SUCCESS] Dispatched to +${cleanPhone}, SID: ${twilioData.sid}`);
-          return NextResponse.json({
-            success: true,
-            provider: "Twilio WhatsApp Cloud",
-            messageId: twilioData.sid,
-            phone: cleanPhone,
-            message: `Automated WhatsApp delivered to +${cleanPhone} via Twilio!`,
-            directUrl,
-          });
-        } else {
-          console.warn("[TWILIO ERROR]:", twilioData);
-        }
-      } catch (twErr) {
-        console.warn("[TWILIO DISPATCH FAILED]:", twErr);
-      }
-    }
-
-    // 2. Check for n8n Workflow Automation Webhook
+    // 1. Fallback: Check for n8n Workflow Automation Webhook
     const n8nWebhookUrl = process.env.N8N_WHATSAPP_WEBHOOK_URL;
     if (n8nWebhookUrl) {
       try {
