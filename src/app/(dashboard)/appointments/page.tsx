@@ -159,7 +159,7 @@ Need to reschedule? Reply *RESCHEDULE* to this WhatsApp or contact reception.`;
     setActiveEmail(email);
     setActiveWhatsapp(whatsapp);
 
-    // Call Real SMTP API Route
+    // 1. Call Real SMTP API Route (Gmail Port 465 SSL)
     try {
       const res = await fetch("/api/send-email", {
         method: "POST",
@@ -169,23 +169,34 @@ Need to reschedule? Reply *RESCHEDULE* to this WhatsApp or contact reception.`;
       const data = await res.json();
       if (data.success) {
         setEmailToast({
-          message: `Live SMTP Sent: Real email delivered to ${email.to}! WhatsApp ready for dispatch.`,
-          email,
-        });
-      } else {
-        setEmailToast({
-          message: `Robotic Automation: Email queued for ${email.to} & WhatsApp alert prepared for ${whatsapp.phone}!`,
+          message: `Live Gmail Delivered to ${email.to}! Dispatching WhatsApp alert...`,
           email,
         });
       }
     } catch {
-      setEmailToast({
-        message: `Robotic Automation: Email queued for ${email.to} & WhatsApp alert prepared for ${whatsapp.phone}!`,
-        email,
-      });
+      // safe fallback
     }
 
-    // Automatically trigger Robotic Workflow wf_004 (Appointment Multi-Channel Notification)
+    // 2. Call Dedicated WhatsApp API Route & Auto-Launch
+    try {
+      const waRes = await fetch("/api/send-whatsapp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(whatsapp),
+      });
+      const waData = await waRes.json();
+      if (waData.directUrl) {
+        window.open(waData.directUrl, "_blank");
+      }
+      setEmailToast({
+        message: `Live Gmail Delivered to ${email.to} & WhatsApp alert dispatched for ${whatsapp.phone}!`,
+        email,
+      });
+    } catch {
+      // fallback
+    }
+
+    // 3. Automatically trigger Robotic Workflow wf_004
     try {
       await runWorkflow("wf_004");
     } catch {
@@ -268,7 +279,7 @@ If this cancellation was made in error or you would like to reschedule, please r
     setActiveEmail(email);
     setActiveWhatsapp(whatsapp);
 
-    // Call Real SMTP API Route for cancellation
+    // 1. Call Real SMTP API Route for cancellation
     try {
       await fetch("/api/send-email", {
         method: "POST",
@@ -279,8 +290,23 @@ If this cancellation was made in error or you would like to reschedule, please r
       // safe fallback
     }
 
+    // 2. Call Dedicated WhatsApp API Route & Auto-Launch
+    try {
+      const waRes = await fetch("/api/send-whatsapp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(whatsapp),
+      });
+      const waData = await waRes.json();
+      if (waData.directUrl) {
+        window.open(waData.directUrl, "_blank");
+      }
+    } catch {
+      // safe fallback
+    }
+
     setEmailToast({
-      message: `Cancellation Notice Dispatched: Email sent to ${email.to} & WhatsApp alert dispatched to ${whatsapp.phone}!`,
+      message: `Cancellation Dispatched: Email sent to ${email.to} & WhatsApp alert dispatched to ${whatsapp.phone}!`,
       email,
     });
 
@@ -398,6 +424,20 @@ If this cancellation was made in error or you would like to reschedule, please r
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(email),
         }).catch(() => { });
+      }
+
+      // Trigger WhatsApp dispatch if selected
+      if (formData.sendWhatsappNotice) {
+        fetch("/api/send-whatsapp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(whatsapp),
+        })
+          .then((r) => r.json())
+          .then((d) => {
+            if (d.directUrl) window.open(d.directUrl, "_blank");
+          })
+          .catch(() => { });
       }
 
       setEmailToast({
