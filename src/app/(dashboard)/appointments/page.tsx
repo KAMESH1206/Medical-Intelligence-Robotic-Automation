@@ -177,7 +177,7 @@ Need to reschedule? Reply *RESCHEDULE* to this WhatsApp or contact reception.`;
       // safe fallback
     }
 
-    // 2. Call Dedicated WhatsApp API Route & Auto-Launch
+    // 2. Call Dedicated WhatsApp API Route (Direct Twilio Background Dispatch - No Manual Popups)
     try {
       const waRes = await fetch("/api/send-whatsapp", {
         method: "POST",
@@ -185,13 +185,12 @@ Need to reschedule? Reply *RESCHEDULE* to this WhatsApp or contact reception.`;
         body: JSON.stringify(whatsapp),
       });
       const waData = await waRes.json();
-      if (waData.directUrl) {
-        window.open(waData.directUrl, "_blank");
+      if (waData.success) {
+        setEmailToast({
+          message: `✓ Auto-Dispatched: Live Gmail Delivered to ${email.to} & WhatsApp alert automatically sent to ${whatsapp.phone} via Twilio!`,
+          email,
+        });
       }
-      setEmailToast({
-        message: `Live Gmail Delivered to ${email.to} & WhatsApp alert dispatched for ${whatsapp.phone}!`,
-        email,
-      });
     } catch {
       // fallback
     }
@@ -290,17 +289,13 @@ If this cancellation was made in error or you would like to reschedule, please r
       // safe fallback
     }
 
-    // 2. Call Dedicated WhatsApp API Route & Auto-Launch
+    // 2. Call Dedicated WhatsApp API Route (Direct Twilio Background Dispatch - No Manual Popups)
     try {
-      const waRes = await fetch("/api/send-whatsapp", {
+      await fetch("/api/send-whatsapp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(whatsapp),
       });
-      const waData = await waRes.json();
-      if (waData.directUrl) {
-        window.open(waData.directUrl, "_blank");
-      }
     } catch {
       // safe fallback
     }
@@ -411,41 +406,10 @@ If this cancellation was made in error or you would like to reschedule, please r
       status: "requested",
     });
 
-    if (formData.sendEmailNotice || formData.sendWhatsappNotice) {
-      const email = generateEmailData(newApt);
-      const whatsapp = generateWhatsappData(newApt);
-      setActiveEmail(email);
-      setActiveWhatsapp(whatsapp);
-
-      // Trigger real SMTP email if selected
-      if (formData.sendEmailNotice) {
-        fetch("/api/send-email", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(email),
-        }).catch(() => { });
-      }
-
-      // Trigger WhatsApp dispatch if selected
-      if (formData.sendWhatsappNotice) {
-        fetch("/api/send-whatsapp", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(whatsapp),
-        })
-          .then((r) => r.json())
-          .then((d) => {
-            if (d.directUrl) window.open(d.directUrl, "_blank");
-          })
-          .catch(() => { });
-      }
-
-      setEmailToast({
-        message: `Booking created & Live notifications dispatched: ${formData.sendEmailNotice ? "Email Delivered ✓" : ""} ${formData.sendWhatsappNotice ? "WhatsApp Ready ✓" : ""}`,
-        email,
-      });
-      runWorkflow("wf_004").catch(() => { });
-    }
+    setEmailToast({
+      message: `Appointment scheduled for ${finalPatientName}! Status is "requested". Click "Confirm" in the table to dispatch multi-channel notices.`,
+      email: generateEmailData(newApt),
+    });
 
     setIsNewModalOpen(false);
     setIsCustomClinic(false);
@@ -767,7 +731,7 @@ If this cancellation was made in error or you would like to reschedule, please r
                     onClick={() => {
                       setIsCustomPatient(!isCustomPatient);
                       if (!isCustomPatient) {
-                        setFormData({ ...formData, patientName: "", patientEmail: "", patientPhone: "" });
+                        setFormData({ ...formData, patientName: "", patientEmail: "mrkamesh8@gmail.com", patientPhone: "+91 73971 86456" });
                       }
                     }}
                     className="text-[11px] text-[#8DB9F0] hover:underline font-semibold cursor-pointer"
@@ -781,14 +745,14 @@ If this cancellation was made in error or you would like to reschedule, please r
                     onChange={(e) => {
                       if (e.target.value === "__custom__") {
                         setIsCustomPatient(true);
-                        setFormData({ ...formData, patientName: "", patientEmail: "", patientPhone: "" });
+                        setFormData({ ...formData, patientName: "", patientEmail: "mrkamesh8@gmail.com", patientPhone: "+91 73971 86456" });
                       } else {
                         const selected = patients.find((p) => p.name === e.target.value);
                         setFormData({
                           ...formData,
                           patientName: e.target.value,
-                          patientEmail: selected?.email || "",
-                          patientPhone: selected?.phone || "",
+                          patientEmail: selected?.email || "mrkamesh8@gmail.com",
+                          patientPhone: selected?.phone || "+91 73971 86456",
                         });
                       }
                     }}
@@ -832,7 +796,7 @@ If this cancellation was made in error or you would like to reschedule, please r
                   <label className="mira-label">WhatsApp Mobile (For WhatsApp Alert)</label>
                   <input
                     type="tel"
-                    placeholder="+91 98765 43210 / 0412 345 678"
+                    placeholder="+91 73971 86456"
                     value={formData.patientPhone}
                     onChange={(e) => setFormData({ ...formData, patientPhone: e.target.value })}
                     className="mira-input"
