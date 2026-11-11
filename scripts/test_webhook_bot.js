@@ -29,3 +29,4 @@ if (!fs.existsSync(APPOINTMENTS_FILE)) {
 }
 
 console.log("Appointments state ready at:", APPOINTMENTS_FILE);
+

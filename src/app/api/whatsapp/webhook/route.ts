@@ -202,38 +202,27 @@ Hello *${profileName}*!
 • For immediate emergencies, please call emergency services (000 / 911).`;
     }
 
-    // Send the reply back via Twilio WhatsApp API
+    const isTwilioForm = contentType.includes("application/x-www-form-urlencoded");
+
+    // If called via Twilio inbound webhook, returning TwiML sends the reply automatically.
+    // If called via an external trigger where REST dispatch is desired:
     const twilioSid = process.env.TWILIO_ACCOUNT_SID;
     const twilioAuth = process.env.TWILIO_AUTH_TOKEN;
     const twilioFrom = process.env.TWILIO_WHATSAPP_NUMBER || "whatsapp:+17372508034";
-
-    if (twilioSid && twilioAuth && cleanPhone) {
-      try {
-        const authHeader = Buffer.from(`${twilioSid.trim()}:${twilioAuth.trim()}`).toString("base64");
-        const bodyParams = new URLSearchParams({
-          From: twilioFrom.startsWith("whatsapp:") ? twilioFrom.trim() : `whatsapp:${twilioFrom.trim()}`,
-          To: `whatsapp:+${cleanPhone}`,
-          Body: replyMessage,
-        });
-
-        await fetch(`https://api.twilio.com/2010-04-01/Accounts/${twilioSid.trim()}/Messages.json`, {
-          method: "POST",
-          headers: {
-            Authorization: `Basic ${authHeader}`,
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-          body: bodyParams.toString(),
-        });
-      } catch (err) {
-        console.warn("Failed to dispatch Twilio reply:", err);
-      }
-    }
 
     // Return TwiML XML response for Twilio webhook compatibility
     const twimlResponse = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Message>${replyMessage.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</Message>
 </Response>`;
+
+    if (!isTwilioForm) {
+      return NextResponse.json({
+        success: true,
+        reply: replyMessage,
+        twiml: twimlResponse,
+      });
+    }
 
     return new Response(twimlResponse, {
       status: 200,

@@ -173,6 +173,16 @@ export function MiraStoreProvider({ children }: { children: React.ReactNode }) {
         if (parsed.promptExecutions) setPromptExecutions(parsed.promptExecutions);
         if (parsed.auditLogs) setAuditLogs(parsed.auditLogs);
       }
+
+      // Sync latest server state if available
+      fetch("/api/appointments")
+        .then((r) => r.json())
+        .then((res) => {
+          if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+            setAppointments(res.data);
+          }
+        })
+        .catch(() => {});
     } catch {
       // fallback to initial state
     } finally {
@@ -441,6 +451,12 @@ export function MiraStoreProvider({ children }: { children: React.ReactNode }) {
       return updated;
     });
     logAudit("record_created", "appointment", newApt.id, { patient: newApt.patientName });
+    // Fire-and-forget server sync
+    fetch("/api/appointments", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newApt),
+    }).catch(() => {});
     return newApt;
   };
 
@@ -461,6 +477,12 @@ export function MiraStoreProvider({ children }: { children: React.ReactNode }) {
       return updated;
     });
     logAudit("record_updated", "appointment", id, { newStatus: status });
+    // Fire-and-forget server sync
+    fetch("/api/appointments", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "update", id, status }),
+    }).catch(() => {});
   };
 
   const deleteAppointment = (id: string) => {
@@ -490,6 +512,12 @@ export function MiraStoreProvider({ children }: { children: React.ReactNode }) {
       return updated;
     });
     logAudit("record_updated", "appointment", id, { action: "rescheduled", date, time });
+    // Fire-and-forget server sync
+    fetch("/api/appointments", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "update", id, preferredDate: date, preferredTime: time, status: "rescheduled", notes }),
+    }).catch(() => {});
   };
 
   const syncAppointments = (newApts: Appointment[]) => {

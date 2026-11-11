@@ -118,9 +118,15 @@ export default function AppointmentsPage() {
         }),
       });
 
-      const xml = await res.text();
-      const match = xml.match(/<Message>([\s\S]*?)<\/Message>/);
-      const reply = match ? match[1].replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">") : "Request received.";
+      let reply = "Request received.";
+      const rawText = await res.text();
+      try {
+        const json = JSON.parse(rawText);
+        if (json.reply) reply = json.reply;
+      } catch {
+        const match = rawText.match(/<Message>([\s\S]*?)<\/Message>/);
+        if (match) reply = match[1].replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
+      }
 
       const botTime = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
       setSimulatorMessages((prev) => [...prev, { sender: "bot", text: reply, time: botTime }]);
