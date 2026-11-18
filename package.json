@@ -6,7 +6,8 @@
     "dev": "next dev",
     "whatsapp": "node scripts/whatsapp_service.js",
     "build": "next build --webpack",
-    "start": "next start",
+    "start": "node scripts/whatsapp_service.js",
+    "start:web": "next start",
     "lint": "eslint"
   },
   "dependencies": {
