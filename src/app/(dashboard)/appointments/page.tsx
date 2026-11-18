@@ -305,10 +305,18 @@ Need to reschedule? Reply *RESCHEDULE* to this WhatsApp or contact reception.`;
       });
       const waData = await waRes.json();
       if (waData.success) {
-        setEmailToast({
-          message: `✓ Auto-Dispatched: Live Gmail Delivered to ${email.to} & WhatsApp alert automatically sent to ${whatsapp.phone} from clinic WhatsApp!`,
-          email,
-        });
+        if (waData.isDirectLaunch && waData.directUrl) {
+          window.open(waData.directUrl, "_blank");
+          setEmailToast({
+            message: `✓ Email Delivered to ${email.to} & WhatsApp opened for ${whatsapp.phone}!`,
+            email,
+          });
+        } else {
+          setEmailToast({
+            message: `✓ Auto-Dispatched: Live Gmail Delivered to ${email.to} & WhatsApp alert automatically sent to ${whatsapp.phone} from clinic WhatsApp!`,
+            email,
+          });
+        }
       }
     } catch {
       // fallback
@@ -408,13 +416,17 @@ If this cancellation was made in error or you would like to reschedule, please r
       // safe fallback
     }
 
-    // 2. Call Dedicated WhatsApp API Route (Direct Twilio Background Dispatch - No Manual Popups)
+    // 2. Call Dedicated WhatsApp API Route (Direct Background Dispatch or Universal Launch)
     try {
-      await fetch("/api/send-whatsapp", {
+      const waRes = await fetch("/api/send-whatsapp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(whatsapp),
       });
+      const waData = await waRes.json();
+      if (waData?.isDirectLaunch && waData?.directUrl) {
+        window.open(waData.directUrl, "_blank");
+      }
     } catch {
       // safe fallback
     }

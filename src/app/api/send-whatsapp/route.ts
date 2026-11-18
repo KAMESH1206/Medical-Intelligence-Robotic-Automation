@@ -21,9 +21,10 @@ export async function POST(request: Request) {
     const encodedText = encodeURIComponent(messageText || `Appointment confirmed for ${patientName} at ${clinicName} on ${date} at ${time}.`);
     const directUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodedText}`;
 
-    // 0. Primary: Local Native WhatsApp Engine (Port 8085)
+    // 0. Primary: WhatsApp Engine (Cloud Tunnel or Local Port 8085)
+    const whatsappEngineUrl = process.env.WHATSAPP_SERVICE_URL || "http://localhost:8085";
     try {
-      const nativeRes = await fetch("http://localhost:8085/send", {
+      const nativeRes = await fetch(`${whatsappEngineUrl}/send`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
