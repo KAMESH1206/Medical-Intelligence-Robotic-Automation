@@ -31,8 +31,12 @@ import { DEFAULT_USER } from "./constants";
 import {
   getSupabasePatients,
   insertSupabasePatient,
+  updateSupabasePatient,
+  deleteSupabasePatient,
   getSupabaseAppointments,
   insertSupabaseAppointment,
+  updateSupabaseAppointment,
+  deleteSupabaseAppointment,
 } from "./supabase";
 
 interface MiraStoreContextType {
@@ -64,6 +68,7 @@ interface MiraStoreContextType {
   // Appointments
   appointments: Appointment[];
   addAppointment: (apt: Omit<Appointment, "id" | "createdAt" | "updatedAt">) => Appointment;
+  updateAppointment: (id: string, updates: Partial<Appointment>) => void;
   updateAppointmentStatus: (id: string, status: Appointment["status"]) => void;
   deleteAppointment: (id: string) => void;
   rescheduleAppointment: (id: string, date: string, time: string, notes?: string) => void;
@@ -361,6 +366,7 @@ export function MiraStoreProvider({ children }: { children: React.ReactNode }) {
       return updated;
     });
     logAudit("record_updated", "patient", id, updates);
+    updateSupabasePatient(id, updates).catch(() => {});
   };
 
   const deletePatient = (id: string) => {
@@ -370,6 +376,7 @@ export function MiraStoreProvider({ children }: { children: React.ReactNode }) {
       return updated;
     });
     logAudit("record_deleted", "patient", id);
+    deleteSupabasePatient(id).catch(() => {});
   };
 
   const uploadDocument = (file: { name: string; size: number; type: string; base64Data?: string; fileUrl?: string }) => {
@@ -722,6 +729,25 @@ export function MiraStoreProvider({ children }: { children: React.ReactNode }) {
     return newApt;
   };
 
+  const updateAppointment = (id: string, updates: Partial<Appointment>) => {
+    setAppointments((prev) => {
+      const updated = prev.map((a) =>
+        a.id === id ? { ...a, ...updates, updatedAt: new Date().toISOString() } : a
+      );
+      saveState({ appointments: updated });
+      return updated;
+    });
+    logAudit("record_updated", "appointment", id, updates);
+    // Sync to server API
+    fetch("/api/appointments", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "update", id, ...updates }),
+    }).catch(() => {});
+    // Sync to Supabase
+    updateSupabaseAppointment(id, updates).catch(() => {});
+  };
+
   const updateAppointmentStatus = (id: string, status: Appointment["status"]) => {
     setAppointments((prev) => {
       const updated = prev.map((a) =>
@@ -745,6 +771,7 @@ export function MiraStoreProvider({ children }: { children: React.ReactNode }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "update", id, status }),
     }).catch(() => {});
+    updateSupabaseAppointment(id, { status }).catch(() => {});
   };
 
   const deleteAppointment = (id: string) => {
@@ -754,6 +781,8 @@ export function MiraStoreProvider({ children }: { children: React.ReactNode }) {
       return updated;
     });
     logAudit("record_deleted", "appointment", id);
+    // Sync deletion to Supabase
+    deleteSupabaseAppointment(id).catch(() => {});
     // Sync deletion to server file so polling does not restore it
     fetch(`/api/appointments?id=${encodeURIComponent(id)}`, {
       method: "DELETE",
@@ -1099,6 +1128,7 @@ export function MiraStoreProvider({ children }: { children: React.ReactNode }) {
         deleteDocument,
         appointments,
         addAppointment,
+        updateAppointment,
         updateAppointmentStatus,
         deleteAppointment,
         rescheduleAppointment,

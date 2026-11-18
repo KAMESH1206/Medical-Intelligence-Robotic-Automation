@@ -25,6 +25,7 @@ import {
   Phone,
   ExternalLink,
   Trash2,
+  Pencil,
 } from "lucide-react";
 
 interface DispatchedEmail {
@@ -51,7 +52,7 @@ interface DispatchedWhatsapp {
 }
 
 export default function AppointmentsPage() {
-  const { appointments, addAppointment, updateAppointmentStatus, deleteAppointment, syncAppointments, patients, providers, runWorkflow } = useMiraStore();
+  const { appointments, addAppointment, updateAppointment, updateAppointmentStatus, deleteAppointment, syncAppointments, patients, providers, runWorkflow } = useMiraStore();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [clinicFilter, setClinicFilter] = useState<string>("all");
@@ -78,6 +79,49 @@ export default function AppointmentsPage() {
   ]);
   const [simInput, setSimInput] = useState("");
   const [isSimLoading, setIsSimLoading] = useState(false);
+
+  // Edit Appointment Modal State
+  const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    patientName: "",
+    patientEmail: "",
+    patientPhone: "",
+    clinicName: CLINIC_LOCATIONS[0],
+    preferredDate: "",
+    preferredTime: "10:00 AM",
+    appointmentType: SERVICE_TYPES[0] || "General Consultation",
+    status: "requested" as AppointmentStatus,
+    notes: "",
+  });
+
+  const handleOpenEdit = (apt: Appointment) => {
+    setEditingAppointment(apt);
+    setEditFormData({
+      patientName: apt.patientName || "",
+      patientEmail: apt.patientEmail || "",
+      patientPhone: apt.patientPhone || "",
+      clinicName: apt.clinicName || CLINIC_LOCATIONS[0],
+      preferredDate: apt.preferredDate || "",
+      preferredTime: apt.preferredTime || "10:00 AM",
+      appointmentType: apt.appointmentType || SERVICE_TYPES[0] || "General Consultation",
+      status: apt.status || "requested",
+      notes: apt.notes || "",
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingAppointment || !editFormData.patientName.trim()) return;
+
+    updateAppointment(editingAppointment.id, {
+      ...editFormData,
+    });
+
+    setIsEditModalOpen(false);
+    setEditingAppointment(null);
+  };
 
   // Poll for live two-way WhatsApp updates every 4 seconds
   useEffect(() => {
@@ -770,6 +814,14 @@ If this cancellation was made in error or you would like to reschedule, please r
                           )}
                           <button
                             type="button"
+                            onClick={() => handleOpenEdit(apt)}
+                            className="p-1.5 rounded-lg border border-[#DFDEEB] text-[#74778A] hover:bg-[#8DB9F0]/15 hover:text-[#6BA3E8] hover:border-[#8DB9F0]/50 transition cursor-pointer"
+                            title="Edit Appointment Details"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
                             onClick={() => handleDeleteAppointment(apt.id, apt.patientName)}
                             className="p-1.5 rounded text-[#9699AA] hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition cursor-pointer"
                             title="Delete Appointment Record"
@@ -873,8 +925,16 @@ If this cancellation was made in error or you would like to reschedule, please r
                     )}
                     <button
                       type="button"
+                      onClick={() => handleOpenEdit(apt)}
+                      className="p-1.5 rounded-lg border border-[#8DB9F0]/40 bg-[#8DB9F0]/10 hover:bg-[#8DB9F0]/20 text-[#6BA3E8] transition cursor-pointer"
+                      title="Edit Appointment"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => handleDeleteAppointment(apt.id, apt.patientName)}
-                      className="p-1.5 rounded-lg border border-transparent hover:border-rose-200 hover:bg-rose-50 text-[#9699AA] hover:text-rose-600 transition"
+                      className="p-1.5 rounded-lg border border-transparent hover:border-rose-200 hover:bg-rose-50 text-[#9699AA] hover:text-rose-600 transition cursor-pointer"
                       title="Delete Record"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -1530,6 +1590,158 @@ If this cancellation was made in error or you would like to reschedule, please r
               >
                 <Send className="w-4 h-4" />
               </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Appointment Modal */}
+      {isEditModalOpen && editingAppointment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
+          <div className="relative w-full max-w-lg my-auto bg-white rounded-2xl p-6 shadow-2xl border border-[#DFDEEB] space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-[#DFDEEB] pb-3">
+              <div>
+                <h3 className="text-base font-bold text-[#25283A] flex items-center gap-2">
+                  <Pencil className="w-4 h-4 text-[#8DB9F0]" />
+                  <span>Edit Appointment: {editingAppointment.patientName}</span>
+                </h3>
+                <p className="text-xs text-[#74778A] mt-0.5">Real-time sync to Supabase Cloud & Local Storage</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsEditModalOpen(false);
+                  setEditingAppointment(null);
+                }}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-[#74778A] hover:text-[#25283A] hover:bg-[#F8F8FC] transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleEditSubmit} className="space-y-3 text-xs">
+              <div>
+                <label className="mira-label">Patient Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={editFormData.patientName}
+                  onChange={(e) => setEditFormData({ ...editFormData, patientName: e.target.value })}
+                  className="mira-input"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mira-label">Patient Email</label>
+                  <input
+                    type="email"
+                    value={editFormData.patientEmail}
+                    onChange={(e) => setEditFormData({ ...editFormData, patientEmail: e.target.value })}
+                    className="mira-input"
+                  />
+                </div>
+                <div>
+                  <label className="mira-label">Patient Phone</label>
+                  <input
+                    type="tel"
+                    value={editFormData.patientPhone}
+                    onChange={(e) => setEditFormData({ ...editFormData, patientPhone: e.target.value })}
+                    className="mira-input"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mira-label">Clinic Location</label>
+                  <input
+                    type="text"
+                    value={editFormData.clinicName}
+                    onChange={(e) => setEditFormData({ ...editFormData, clinicName: e.target.value })}
+                    className="mira-input"
+                  />
+                </div>
+                <div>
+                  <label className="mira-label">Service Type</label>
+                  <select
+                    value={editFormData.appointmentType}
+                    onChange={(e) => setEditFormData({ ...editFormData, appointmentType: e.target.value })}
+                    className="mira-input"
+                  >
+                    {SERVICE_TYPES.map((st) => (
+                      <option key={st} value={st}>{st}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mira-label">Preferred Date</label>
+                  <input
+                    type="date"
+                    required
+                    value={editFormData.preferredDate}
+                    onChange={(e) => setEditFormData({ ...editFormData, preferredDate: e.target.value })}
+                    className="mira-input"
+                  />
+                </div>
+                <div>
+                  <label className="mira-label">Preferred Time</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 10:00 AM"
+                    value={editFormData.preferredTime}
+                    onChange={(e) => setEditFormData({ ...editFormData, preferredTime: e.target.value })}
+                    className="mira-input"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="mira-label">Booking Status</label>
+                <select
+                  value={editFormData.status}
+                  onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value as AppointmentStatus })}
+                  className="mira-input font-medium"
+                >
+                  <option value="requested">Requested</option>
+                  <option value="pending_approval">Pending Approval</option>
+                  <option value="confirmed">Confirmed</option>
+                  <option value="rescheduled">Rescheduled</option>
+                  <option value="cancelled">Cancelled</option>
+                  <option value="completed">Completed</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="mira-label">Clinical / Admin Notes</label>
+                <textarea
+                  rows={2}
+                  placeholder="Reason for visit, follow-up instructions..."
+                  value={editFormData.notes}
+                  onChange={(e) => setEditFormData({ ...editFormData, notes: e.target.value })}
+                  className="mira-input resize-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#DFDEEB]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsEditModalOpen(false);
+                    setEditingAppointment(null);
+                  }}
+                  className="px-4 py-2 rounded-lg border border-[#DFDEEB] text-[#74778A] hover:bg-[#F8F8FC] transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="mira-btn-primary cursor-pointer flex items-center gap-1.5">
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Save Changes</span>
+                </button>
+              </div>
             </form>
           </div>
         </div>

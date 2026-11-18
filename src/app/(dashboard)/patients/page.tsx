@@ -15,6 +15,7 @@ import {
   Clock,
   Trash2,
   Eye,
+  Pencil,
   Sparkles,
   Download,
   Building,
@@ -60,6 +61,55 @@ export default function PatientsPage() {
     enquiryCategory: ENQUIRY_CATEGORIES[0],
     notes: "",
   });
+
+  // Edit Patient Form State
+  const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    dateOfBirth: "",
+    preferredClinic: CLINIC_LOCATIONS[0],
+    enquiryCategory: ENQUIRY_CATEGORIES[0],
+    status: "active" as PatientStatus,
+    notes: "",
+  });
+
+  const handleOpenEdit = (patient: Patient) => {
+    setEditingPatient(patient);
+    setEditFormData({
+      name: patient.name || "",
+      email: patient.email || "",
+      phone: patient.phone || "",
+      dateOfBirth: patient.dateOfBirth || "",
+      preferredClinic: patient.preferredClinic || CLINIC_LOCATIONS[0],
+      enquiryCategory: patient.enquiryCategory || ENQUIRY_CATEGORIES[0],
+      status: patient.status || "active",
+      notes: patient.notes || "",
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingPatient || !editFormData.name.trim()) return;
+
+    const missing: string[] = [];
+    if (!editFormData.email) missing.push("email");
+    if (!editFormData.phone) missing.push("phone");
+    if (!editFormData.dateOfBirth) missing.push("dateOfBirth");
+    const score = Math.max(50, 100 - missing.length * 15);
+
+    updatePatient(editingPatient.id, {
+      ...editFormData,
+      validationScore: score,
+      missingFields: missing.length > 0 ? missing : undefined,
+    });
+
+    setIsEditModalOpen(false);
+    setEditingPatient(null);
+  };
 
   const filteredPatients = patients.filter((p) => {
     const matchesSearch =
@@ -315,24 +365,29 @@ export default function PatientsPage() {
                         <div className="flex items-center justify-end gap-1.5">
                           <button
                             onClick={() => setSelectedPatient(patient)}
-                            className="p-1.5 rounded-lg border border-[#DFDEEB] text-[#74778A] hover:bg-[#E9E8F8] hover:text-[#25283A] transition"
+                            className="p-1.5 rounded-lg border border-[#DFDEEB] text-[#74778A] hover:bg-[#E9E8F8] hover:text-[#25283A] transition cursor-pointer"
                             title="View Details"
                           >
                             <Eye className="w-3.5 h-3.5" />
                           </button>
-                          {perms.canDeletePatient && (
-                            <button
-                              onClick={() => {
-                                if (confirm(`Remove record for ${patient.name}?`)) {
-                                  deletePatient(patient.id);
-                                }
-                              }}
-                              className="p-1.5 rounded-lg border border-[#DFDEEB] text-[#74778A] hover:bg-rose-50 hover:text-rose-600 transition cursor-pointer"
-                              title="Super Admin: Delete Record"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          )}
+                          <button
+                            onClick={() => handleOpenEdit(patient)}
+                            className="p-1.5 rounded-lg border border-[#DFDEEB] text-[#74778A] hover:bg-[#8DB9F0]/15 hover:text-[#6BA3E8] hover:border-[#8DB9F0]/50 transition cursor-pointer"
+                            title="Edit Patient Details"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (confirm(`Remove record for "${patient.name}"? This action permanently removes the patient from local storage and Supabase cloud database.`)) {
+                                deletePatient(patient.id);
+                              }
+                            }}
+                            className="p-1.5 rounded-lg border border-[#DFDEEB] text-[#74778A] hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition cursor-pointer"
+                            title="Delete Patient Record"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -403,24 +458,30 @@ export default function PatientsPage() {
                   <div className="flex items-center gap-2 pt-1">
                     <button
                       onClick={() => setSelectedPatient(patient)}
-                      className="flex-1 py-2 px-3 rounded-lg border border-[#DFDEEB] bg-white hover:bg-[#F8F8FC] text-xs font-semibold text-[#25283A] flex items-center justify-center gap-1.5 transition"
+                      className="flex-1 py-2 px-3 rounded-lg border border-[#DFDEEB] bg-white hover:bg-[#F8F8FC] text-xs font-semibold text-[#25283A] flex items-center justify-center gap-1.5 transition cursor-pointer"
                     >
                       <Eye className="w-3.5 h-3.5 text-[#8DB9F0]" />
-                      <span>View Full Record</span>
+                      <span>View</span>
                     </button>
-                    {perms.canDeletePatient && (
-                      <button
-                        onClick={() => {
-                          if (confirm(`Remove record for ${patient.name}?`)) {
-                            deletePatient(patient.id);
-                          }
-                        }}
-                        className="p-2 rounded-lg border border-[#DFDEEB] bg-rose-50 text-rose-600 hover:bg-rose-100 transition"
-                        title="Delete Patient"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
+                    <button
+                      onClick={() => handleOpenEdit(patient)}
+                      className="py-2 px-3 rounded-lg border border-[#8DB9F0]/40 bg-[#8DB9F0]/10 hover:bg-[#8DB9F0]/20 text-xs font-semibold text-[#6BA3E8] flex items-center justify-center gap-1.5 transition cursor-pointer"
+                      title="Edit Patient"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                      <span>Edit</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (confirm(`Remove record for "${patient.name}"? This action permanently removes the patient from local storage and Supabase cloud database.`)) {
+                          deletePatient(patient.id);
+                        }
+                      }}
+                      className="p-2 rounded-lg border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 transition cursor-pointer"
+                      title="Delete Patient"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
               ))}
@@ -648,12 +709,154 @@ export default function PatientsPage() {
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="px-4 py-2 rounded-lg border border-[#DFDEEB] text-[#74778A] hover:bg-[#F8F8FC] transition"
+                  className="px-4 py-2 rounded-lg border border-[#DFDEEB] text-[#74778A] hover:bg-[#F8F8FC] transition cursor-pointer"
                 >
                   Cancel
                 </button>
-                <button type="submit" className="mira-btn-primary">
+                <button type="submit" className="mira-btn-primary cursor-pointer">
                   Validate & Submit
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Patient Modal */}
+      {isEditModalOpen && editingPatient && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
+          <div className="relative w-full max-w-lg my-auto bg-white rounded-2xl p-6 shadow-2xl border border-[#DFDEEB] space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-[#DFDEEB] pb-3">
+              <div>
+                <h3 className="text-base font-bold text-[#25283A] flex items-center gap-2">
+                  <Pencil className="w-4 h-4 text-[#8DB9F0]" />
+                  <span>Edit Patient: {editingPatient.name}</span>
+                </h3>
+                <p className="text-xs text-[#74778A] font-mono mt-0.5">{editingPatient.referenceId} • Real-time Cloud Sync</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsEditModalOpen(false);
+                  setEditingPatient(null);
+                }}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-[#74778A] hover:text-[#25283A] hover:bg-[#F8F8FC] transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleEditSubmit} className="space-y-3 text-xs">
+              <div>
+                <label className="mira-label">Full Name *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Dr. Jane Smith / John Doe"
+                  value={editFormData.name}
+                  onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                  className="mira-input"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mira-label">Email Address</label>
+                  <input
+                    type="email"
+                    placeholder="john@example.com"
+                    value={editFormData.email}
+                    onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                    className="mira-input"
+                  />
+                </div>
+                <div>
+                  <label className="mira-label">Phone Number</label>
+                  <input
+                    type="tel"
+                    placeholder="0412 345 678"
+                    value={editFormData.phone}
+                    onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+                    className="mira-input"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mira-label">Date of Birth</label>
+                  <input
+                    type="date"
+                    value={editFormData.dateOfBirth}
+                    onChange={(e) => setEditFormData({ ...editFormData, dateOfBirth: e.target.value })}
+                    className="mira-input"
+                  />
+                </div>
+                <div>
+                  <label className="mira-label">Status</label>
+                  <select
+                    value={editFormData.status}
+                    onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value as PatientStatus })}
+                    className="mira-input font-medium"
+                  >
+                    <option value="active">Active</option>
+                    <option value="pending_review">Pending Review</option>
+                    <option value="incomplete">Incomplete</option>
+                    <option value="rejected">Rejected</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mira-label">Preferred Clinic</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Sydney Central Clinic, Apollo Hospital..."
+                    value={editFormData.preferredClinic}
+                    onChange={(e) => setEditFormData({ ...editFormData, preferredClinic: e.target.value })}
+                    className="mira-input"
+                  />
+                </div>
+                <div>
+                  <label className="mira-label">Enquiry Category</label>
+                  <select
+                    value={editFormData.enquiryCategory}
+                    onChange={(e) => setEditFormData({ ...editFormData, enquiryCategory: e.target.value })}
+                    className="mira-input"
+                  >
+                    {ENQUIRY_CATEGORIES.map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="mira-label">Administrative Notes</label>
+                <textarea
+                  rows={2}
+                  placeholder="Medical conditions, referral information, or clinical notes..."
+                  value={editFormData.notes}
+                  onChange={(e) => setEditFormData({ ...editFormData, notes: e.target.value })}
+                  className="mira-input resize-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#DFDEEB]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsEditModalOpen(false);
+                    setEditingPatient(null);
+                  }}
+                  className="px-4 py-2 rounded-lg border border-[#DFDEEB] text-[#74778A] hover:bg-[#F8F8FC] transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="mira-btn-primary cursor-pointer flex items-center gap-1.5">
+                  <CheckCircle className="w-3.5 h-3.5" />
+                  <span>Save Changes</span>
                 </button>
               </div>
             </form>

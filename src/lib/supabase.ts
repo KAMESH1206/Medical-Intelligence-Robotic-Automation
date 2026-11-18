@@ -136,3 +136,70 @@ export async function insertSupabaseAppointment(apt: Appointment): Promise<boole
     return false;
   }
 }
+
+export async function updateSupabasePatient(id: string, updates: Partial<Patient>): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const payload: Record<string, unknown> = {
+      updated_at: new Date().toISOString(),
+    };
+    if (updates.name !== undefined) payload.name = updates.name;
+    if (updates.email !== undefined) payload.email = updates.email;
+    if (updates.phone !== undefined) payload.phone = updates.phone;
+    if (updates.dateOfBirth !== undefined) payload.date_of_birth = updates.dateOfBirth;
+    if (updates.preferredClinic !== undefined) payload.preferred_clinic = updates.preferredClinic;
+    if (updates.enquiryCategory !== undefined) payload.enquiry_category = updates.enquiryCategory;
+    if (updates.notes !== undefined) payload.notes = updates.notes;
+    if (updates.status !== undefined) payload.status = updates.status;
+    if (updates.validationScore !== undefined) payload.validation_score = updates.validationScore;
+    if (updates.missingFields !== undefined) payload.missing_fields = updates.missingFields;
+
+    const { error } = await supabase.from("patients").update(payload).eq("id", id);
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
+export async function deleteSupabasePatient(id: string): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const { error } = await supabase.from("patients").delete().eq("id", id);
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
+export async function updateSupabaseAppointment(id: string, updates: Partial<Appointment>): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const payload: Record<string, unknown> = {
+      updated_at: new Date().toISOString(),
+    };
+    if (updates.patientName !== undefined) payload.patient_name = updates.patientName;
+    if (updates.patientEmail !== undefined) payload.patient_email = updates.patientEmail;
+    if (updates.patientPhone !== undefined) payload.patient_phone = updates.patientPhone;
+    if (updates.clinicName !== undefined) payload.clinic_name = updates.clinicName;
+    if (updates.preferredDate !== undefined) payload.preferred_date = updates.preferredDate;
+    if (updates.preferredTime !== undefined) payload.preferred_time = updates.preferredTime;
+    if (updates.appointmentType !== undefined) payload.appointment_type = updates.appointmentType;
+    if (updates.status !== undefined) payload.status = updates.status;
+    if (updates.notes !== undefined) payload.notes = updates.notes;
+
+    const { error } = await supabase.from("appointments").update(payload).eq("id", id);
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
+export async function deleteSupabaseAppointment(id: string): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const { error } = await supabase.from("appointments").delete().eq("id", id);
+    return !error;
+  } catch {
+    return false;
+  }
+}

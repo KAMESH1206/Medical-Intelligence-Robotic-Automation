@@ -92,7 +92,7 @@ export const ROLE_PERMISSIONS: Record<Role, RolePermissionConfig> = {
       "/settings",
     ],
     canAddPatient: true,
-    canDeletePatient: false,
+    canDeletePatient: true,
     canApproveDocument: true,
     canResolveDuplicates: true,
     canExecuteWorkflows: true,
