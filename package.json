@@ -5,12 +5,13 @@
   "scripts": {
     "dev": "next dev",
     "whatsapp": "node scripts/whatsapp_service.js",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.7.0",
+    "@supabase/supabase-js": "^2.119.0",
     "@tailwindcss/postcss": "^4.3.5",
     "@types/nodemailer": "^8.0.2",
     "@whiskeysockets/baileys": "^7.0.0-rc14",
