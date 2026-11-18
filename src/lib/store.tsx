@@ -28,6 +28,12 @@ import {
   SEED_AUDIT_LOGS,
 } from "./demoData";
 import { DEFAULT_USER } from "./constants";
+import {
+  getSupabasePatients,
+  insertSupabasePatient,
+  getSupabaseAppointments,
+  insertSupabaseAppointment,
+} from "./supabase";
 
 interface MiraStoreContextType {
   currentUser: User;
@@ -162,6 +168,31 @@ export function MiraStoreProvider({ children }: { children: React.ReactNode }) {
         .then((res) => {
           if (res.success && Array.isArray(res.data) && res.data.length > 0) {
             setAppointments(res.data);
+          }
+        })
+        .catch(() => {});
+
+      // Sync latest cloud database state from Supabase
+      getSupabasePatients()
+        .then((cloudPatients) => {
+          if (cloudPatients && cloudPatients.length > 0) {
+            setPatients((prev) => {
+              const existingIds = new Set(prev.map((p) => p.id));
+              const fresh = cloudPatients.filter((p) => !existingIds.has(p.id));
+              return [...fresh, ...prev];
+            });
+          }
+        })
+        .catch(() => {});
+
+      getSupabaseAppointments()
+        .then((cloudApts) => {
+          if (cloudApts && cloudApts.length > 0) {
+            setAppointments((prev) => {
+              const existingIds = new Set(prev.map((a) => a.id));
+              const fresh = cloudApts.filter((a) => !existingIds.has(a.id));
+              return [...fresh, ...prev];
+            });
           }
         })
         .catch(() => {});
@@ -318,6 +349,8 @@ export function MiraStoreProvider({ children }: { children: React.ReactNode }) {
       return updated;
     });
     logAudit("record_created", "patient", newPat.id, { name: newPat.name });
+    // Fire-and-forget cloud database sync
+    insertSupabasePatient(newPat).catch(() => {});
     return newPat;
   };
 
@@ -678,6 +711,8 @@ export function MiraStoreProvider({ children }: { children: React.ReactNode }) {
       return updated;
     });
     logAudit("record_created", "appointment", newApt.id, { patient: newApt.patientName });
+    // Fire-and-forget Supabase cloud sync
+    insertSupabaseAppointment(newApt).catch(() => {});
     // Fire-and-forget server sync
     fetch("/api/appointments", {
       method: "POST",
