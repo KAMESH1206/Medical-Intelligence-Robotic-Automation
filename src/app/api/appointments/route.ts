@@ -3,6 +3,13 @@ import fs from "fs";
 import path from "path";
 import { SEED_APPOINTMENTS } from "@/lib/demoData";
 import type { Appointment } from "@/lib/types";
+import {
+  supabase,
+  getSupabaseAppointments,
+  insertSupabaseAppointment,
+  updateSupabaseAppointment,
+  deleteSupabaseAppointment,
+} from "@/lib/supabase";
 
 const APPOINTMENTS_FILE = path.resolve(process.cwd(), "data/appointments_state.json");
 
@@ -11,9 +18,6 @@ function getLiveAppointments(): Appointment[] {
     if (fs.existsSync(APPOINTMENTS_FILE)) {
       const data = fs.readFileSync(APPOINTMENTS_FILE, "utf-8");
       return JSON.parse(data);
-    } else {
-      fs.writeFileSync(APPOINTMENTS_FILE, JSON.stringify(SEED_APPOINTMENTS, null, 2), "utf-8");
-      return SEED_APPOINTMENTS;
     }
   } catch (e) {
     console.warn("Could not read appointments file:", e);
@@ -30,6 +34,17 @@ function saveLiveAppointments(apts: Appointment[]) {
 }
 
 export async function GET() {
+  // 1. Supabase is the primary Cloud source of truth
+  const cloudData = await getSupabaseAppointments();
+  if (cloudData !== null) {
+    return NextResponse.json({
+      success: true,
+      count: cloudData.length,
+      data: cloudData,
+    });
+  }
+
+  // 2. Fallback to server local state
   const data = getLiveAppointments();
   return NextResponse.json({
     success: true,
@@ -41,12 +56,44 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const appointments = getLiveAppointments();
 
-    // Check conflict
-    const conflict = appointments.find(
+    // Check action: reset
+    if (body.action === "reset") {
+      saveLiveAppointments(SEED_APPOINTMENTS);
+      return NextResponse.json({ success: true, message: "Appointments reset to seeds.", data: SEED_APPOINTMENTS });
+    }
+
+    // Check action: delete
+    if (body.action === "delete" && body.id) {
+      if (body.id === "all") {
+        saveLiveAppointments([]);
+        if (supabase) {
+          await supabase.from("appointments").delete().neq("id", "");
+        }
+        return NextResponse.json({ success: true, message: "All appointments deleted.", count: 0 });
+      }
+      const local = getLiveAppointments().filter((a) => a.id !== body.id);
+      saveLiveAppointments(local);
+      await deleteSupabaseAppointment(body.id);
+      return NextResponse.json({ success: true, message: "Appointment deleted." });
+    }
+
+    // Check action: update
+    if (body.action === "update" && body.id) {
+      const local = getLiveAppointments().map((a) =>
+        a.id === body.id ? { ...a, ...body, updatedAt: new Date().toISOString() } : a
+      );
+      saveLiveAppointments(local);
+      await updateSupabaseAppointment(body.id, body);
+      return NextResponse.json({ success: true, message: "Appointment updated." });
+    }
+
+    // Fetch existing appointments to check conflict
+    const existing = (await getSupabaseAppointments()) || getLiveAppointments();
+
+    const conflict = existing.find(
       (a) =>
-        a.clinicName === body.clinicName &&
+        a.clinicName?.toLowerCase() === body.clinicName?.toLowerCase() &&
         a.preferredDate === body.preferredDate &&
         a.preferredTime === body.preferredTime &&
         a.status === "confirmed" &&
@@ -61,29 +108,6 @@ export async function POST(request: Request) {
         },
         { status: 409 }
       );
-    }
-
-    if (body.action === "reset") {
-      saveLiveAppointments(SEED_APPOINTMENTS);
-      return NextResponse.json({ success: true, message: "Appointments reset to seeds.", data: SEED_APPOINTMENTS });
-    }
-
-    if (body.action === "delete" && body.id) {
-      if (body.id === "all") {
-        saveLiveAppointments([]);
-        return NextResponse.json({ success: true, message: "All appointments deleted.", count: 0 });
-      }
-      const updated = appointments.filter((a) => a.id !== body.id);
-      saveLiveAppointments(updated);
-      return NextResponse.json({ success: true, message: "Appointment deleted.", count: updated.length });
-    }
-
-    if (body.action === "update" && body.id) {
-      const updated = appointments.map((a) =>
-        a.id === body.id ? { ...a, ...body, updatedAt: new Date().toISOString() } : a
-      );
-      saveLiveAppointments(updated);
-      return NextResponse.json({ success: true, data: updated.find((a) => a.id === body.id) });
     }
 
     const newApt: Appointment = {
@@ -103,8 +127,9 @@ export async function POST(request: Request) {
       isDemoData: false,
     };
 
-    const updated = [newApt, ...appointments];
+    const updated = [newApt, ...getLiveAppointments()];
     saveLiveAppointments(updated);
+    await insertSupabaseAppointment(newApt);
 
     return NextResponse.json({
       success: true,
@@ -128,11 +153,14 @@ export async function DELETE(request: Request) {
     }
     if (id === "all") {
       saveLiveAppointments([]);
+      if (supabase) {
+        await supabase.from("appointments").delete().neq("id", "");
+      }
       return NextResponse.json({ success: true, message: "All appointments cleared.", count: 0 });
     }
-    const appointments = getLiveAppointments();
-    const updated = appointments.filter((a) => a.id !== id);
+    const updated = getLiveAppointments().filter((a) => a.id !== id);
     saveLiveAppointments(updated);
+    await deleteSupabaseAppointment(id);
     return NextResponse.json({ success: true, message: "Appointment deleted permanently.", count: updated.length });
   } catch {
     return NextResponse.json({ success: false, error: "Failed to delete" }, { status: 500 });

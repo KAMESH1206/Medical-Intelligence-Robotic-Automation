@@ -130,7 +130,7 @@ export default function AppointmentsPage() {
       try {
         const res = await fetch("/api/appointments");
         const json = await res.json();
-        if (isMounted && json.success && Array.isArray(json.data) && json.data.length > 0) {
+        if (isMounted && json.success && Array.isArray(json.data)) {
           syncAppointments(json.data);
         }
       } catch {}

@@ -167,37 +167,22 @@ export function MiraStoreProvider({ children }: { children: React.ReactNode }) {
         if (parsed.auditLogs) setAuditLogs(parsed.auditLogs);
       }
 
-      // Sync latest server state if available
+      // Sync latest server and cloud state from Supabase / API
       fetch("/api/appointments")
         .then((r) => r.json())
         .then((res) => {
-          if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+          if (res.success && Array.isArray(res.data)) {
             setAppointments(res.data);
+            saveState({ appointments: res.data });
           }
         })
         .catch(() => {});
 
-      // Sync latest cloud database state from Supabase
       getSupabasePatients()
         .then((cloudPatients) => {
           if (cloudPatients && cloudPatients.length > 0) {
-            setPatients((prev) => {
-              const existingIds = new Set(prev.map((p) => p.id));
-              const fresh = cloudPatients.filter((p) => !existingIds.has(p.id));
-              return [...fresh, ...prev];
-            });
-          }
-        })
-        .catch(() => {});
-
-      getSupabaseAppointments()
-        .then((cloudApts) => {
-          if (cloudApts && cloudApts.length > 0) {
-            setAppointments((prev) => {
-              const existingIds = new Set(prev.map((a) => a.id));
-              const fresh = cloudApts.filter((a) => !existingIds.has(a.id));
-              return [...fresh, ...prev];
-            });
+            setPatients(cloudPatients);
+            saveState({ patients: cloudPatients });
           }
         })
         .catch(() => {});
@@ -356,6 +341,11 @@ export function MiraStoreProvider({ children }: { children: React.ReactNode }) {
     logAudit("record_created", "patient", newPat.id, { name: newPat.name });
     // Fire-and-forget cloud database sync
     insertSupabasePatient(newPat).catch(() => {});
+    fetch("/api/patients", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newPat),
+    }).catch(() => {});
     return newPat;
   };
 
@@ -367,6 +357,11 @@ export function MiraStoreProvider({ children }: { children: React.ReactNode }) {
     });
     logAudit("record_updated", "patient", id, updates);
     updateSupabasePatient(id, updates).catch(() => {});
+    fetch("/api/patients", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, ...updates }),
+    }).catch(() => {});
   };
 
   const deletePatient = (id: string) => {
@@ -377,6 +372,7 @@ export function MiraStoreProvider({ children }: { children: React.ReactNode }) {
     });
     logAudit("record_deleted", "patient", id);
     deleteSupabasePatient(id).catch(() => {});
+    fetch(`/api/patients?id=${encodeURIComponent(id)}`, { method: "DELETE" }).catch(() => {});
   };
 
   const uploadDocument = (file: { name: string; size: number; type: string; base64Data?: string; fileUrl?: string }) => {
