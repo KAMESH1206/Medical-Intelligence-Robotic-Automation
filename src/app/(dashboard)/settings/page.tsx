@@ -1,7 +1,7 @@
 "use client";
 
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useMiraStore } from "@/lib/store";
 import { ROLES } from "@/lib/constants";
 import type { Role } from "@/lib/types";
@@ -15,17 +15,73 @@ import {
   AlertTriangle,
   Info,
   Trash2,
+  Sparkles,
+  Zap,
 } from "lucide-react";
 
 export default function SettingsPage() {
   const { currentUser, setRole, resetDemoData, clearAllRecords } = useMiraStore();
+  const [geminiKey, setGeminiKey] = useState("");
+  const [geminiModel, setGeminiModel] = useState("gemini-3-flash-preview");
+  const [hasGeminiConfigured, setHasGeminiConfigured] = useState(false);
+  const [isTestingGemini, setIsTestingGemini] = useState(false);
+  const [geminiTestResult, setGeminiTestResult] = useState<{ success: boolean; message: string } | null>(null);
+
   const [anthropicKey, setAnthropicKey] = useState("");
   const [openaiKey, setOpenaiKey] = useState("");
   const [activeModel, setActiveModel] = useState("claude-3-haiku");
   const [saveSuccess, setSaveSuccess] = useState(false);
 
-  const handleSave = (e: React.FormEvent) => {
+  useEffect(() => {
+    fetch("/api/settings/ai")
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.success) {
+          setHasGeminiConfigured(res.hasGeminiKey);
+          if (res.geminiModel) setGeminiModel(res.geminiModel);
+          if (res.maskedGeminiKey) setGeminiKey(res.maskedGeminiKey);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleTestGemini = async () => {
+    setIsTestingGemini(true);
+    setGeminiTestResult(null);
+    try {
+      const res = await fetch("/api/settings/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "test", geminiKey, geminiModel }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (data.model) setGeminiModel(data.model);
+        setGeminiTestResult({ success: true, message: data.message || "Gemini API connected successfully!" });
+      } else {
+        setGeminiTestResult({ success: false, message: data.error || "Failed to connect to Gemini API." });
+      }
+    } catch (e: unknown) {
+      const err = e as Error;
+      setGeminiTestResult({ success: false, message: err.message || "Network error" });
+    } finally {
+      setIsTestingGemini(false);
+    }
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    try {
+      if (geminiKey && !geminiKey.includes("...")) {
+        await fetch("/api/settings/ai", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ geminiKey, geminiModel }),
+        });
+        setHasGeminiConfigured(true);
+      }
+    } catch {}
+
     setSaveSuccess(true);
     setTimeout(() => setSaveSuccess(false), 2500);
   };
@@ -101,14 +157,89 @@ export default function SettingsPage() {
 
       {/* AI Credentials & Model Configuration */}
       <form onSubmit={handleSave} className="p-5 rounded-2xl bg-white border border-[#DFDEEB] shadow-xs space-y-4">
-        <div className="flex items-center gap-2 border-b border-[#DFDEEB] pb-3">
-          <Key className="w-4 h-4 text-[#8DB9F0]" />
-          <h3 className="text-sm font-bold text-[#25283A]">AI Foundation Models & Provider Keys</h3>
+        <div className="flex items-center justify-between border-b border-[#DFDEEB] pb-3">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-[#8DB9F0]" />
+            <h3 className="text-sm font-bold text-[#25283A]">AI Foundation Models & Provider Keys</h3>
+          </div>
+          {hasGeminiConfigured && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+              <span>Gemini Active</span>
+            </span>
+          )}
         </div>
 
-        <div className="space-y-3 text-xs">
+        <div className="space-y-4 text-xs">
+          {/* Google Gemini Card (Primary for OCR & Vision) */}
+          <div className="p-4 rounded-xl bg-gradient-to-r from-[#E9E8F8]/50 via-white to-blue-50/30 border border-[#8DB9F0]/40 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Zap className="w-4 h-4 text-[#6BA3E8]" />
+                <span className="font-bold text-[#25283A] text-xs">Google Gemini API (Clinical OCR & Handwriting)</span>
+              </div>
+              <span className="text-[10px] uppercase font-bold text-[#6BA3E8] px-2 py-0.5 rounded bg-blue-50 border border-blue-200">
+                Primary Vision OCR
+              </span>
+            </div>
+
+            <div>
+              <label className="mira-label">Google Gemini API Key</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={geminiKey}
+                  onChange={(e) => setGeminiKey(e.target.value)}
+                  className="mira-input font-mono text-xs flex-1"
+                  placeholder="Paste your Gemini Key: AIzaSy..."
+                />
+                <button
+                  type="button"
+                  onClick={handleTestGemini}
+                  disabled={isTestingGemini || !geminiKey}
+                  className="px-3 py-1.5 rounded-lg border border-[#8DB9F0] bg-white hover:bg-[#E9E8F8] text-[#25283A] text-xs font-semibold transition disabled:opacity-50 shrink-0"
+                >
+                  {isTestingGemini ? "Testing..." : "Test Connection"}
+                </button>
+              </div>
+              <p className="text-[11px] text-[#74778A] mt-1">
+                Reads cursive doctor prescriptions, patient intake scans, and laboratory pathology reports. Get your free API key at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer" className="text-[#6BA3E8] hover:underline font-semibold">Google AI Studio</a>.
+              </p>
+            </div>
+
+            {geminiTestResult && (
+              <div
+                className={`p-2.5 rounded-lg border text-xs flex items-center gap-2 ${
+                  geminiTestResult.success
+                    ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                    : "bg-rose-50 border-rose-200 text-rose-800"
+                }`}
+              >
+                {geminiTestResult.success ? (
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                ) : (
+                  <AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                )}
+                <span>{geminiTestResult.message}</span>
+              </div>
+            )}
+
+            <div>
+              <label className="mira-label">Gemini Vision Model</label>
+              <select
+                value={geminiModel}
+                onChange={(e) => setGeminiModel(e.target.value)}
+                className="mira-input"
+              >
+                <option value="gemini-3-flash-preview">Gemini 3 Flash Preview (Recommended - Ultra Fast OCR & Multimodal)</option>
+                <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite (High Speed & Low Latency)</option>
+                <option value="gemini-3.8-flash">Gemini 3.8 Flash</option>
+              </select>
+            </div>
+          </div>
+
           <div>
-            <label className="mira-label">Anthropic Claude API Key</label>
+            <label className="mira-label">Anthropic Claude API Key (Optional)</label>
             <input
               type="password"
               value={anthropicKey}

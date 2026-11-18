@@ -13,11 +13,12 @@ import {
   UserCheck,
   LogOut,
   HelpCircle,
+  Menu,
 } from "lucide-react";
 
 export default function TopNav({ title }: { title?: string }) {
   const router = useRouter();
-  const { currentUser, setRole, validationIssues, logout } = useMiraStore();
+  const { currentUser, setRole, validationIssues, logout, toggleMobileSidebar } = useMiraStore();
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -41,11 +42,22 @@ export default function TopNav({ title }: { title?: string }) {
 
   return (
     <>
-      <header className="h-[60px] border-b border-[#DFDEEB] bg-white sticky top-0 z-20 px-6 flex items-center justify-between">
-        {/* Title & Status */}
-        <div className="flex items-center gap-3">
-          <h1 className="text-base font-bold text-[#25283A]">{title || "Operations"}</h1>
-          <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#E9E8F8] text-[#25283A]">
+      <header className="h-[60px] border-b border-[#DFDEEB] bg-white sticky top-0 z-20 px-3 sm:px-6 flex items-center justify-between">
+        {/* Title, Mobile Hamburger & Status */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          <button
+            type="button"
+            onClick={toggleMobileSidebar}
+            className="lg:hidden p-2 rounded-lg border border-[#DFDEEB] text-[#74778A] hover:bg-[#F8F8FC] hover:text-[#25283A] transition cursor-pointer"
+            aria-label="Open mobile navigation menu"
+          >
+            <Menu className="w-4 h-4" />
+          </button>
+
+          <h1 className="text-sm sm:text-base font-bold text-[#25283A] truncate max-w-[140px] sm:max-w-none">
+            {title || "Operations"}
+          </h1>
+          <span className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#E9E8F8] text-[#25283A]">
             <span className="w-1.5 h-1.5 rounded-full bg-[#8DB9F0] animate-pulse"></span>
             Intelligent Operations Engine
           </span>

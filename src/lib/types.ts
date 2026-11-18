@@ -112,7 +112,8 @@ export type DocumentStatus =
 export type Document = {
   id: string;
   filename: string;
-  fileType: "pdf" | "png" | "jpg" | "jpeg";
+  fileType: "pdf" | "png" | "jpg" | "jpeg" | "webp";
+  mimeType?: string;
   fileSize: number;
   status: DocumentStatus;
   uploadedAt: string;
@@ -124,6 +125,8 @@ export type Document = {
   missingFields?: string[];
   errorMessage?: string;
   isDemoData?: boolean;
+  base64Data?: string;
+  fileUrl?: string;
 };
 
 // --- Data Quality ---

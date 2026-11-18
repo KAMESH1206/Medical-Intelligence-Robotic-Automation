@@ -42,3 +42,19 @@ export async function POST(request: Request) {
   }
 }
 
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+    return NextResponse.json({
+      success: true,
+      message: `Document ${id || "record"} deleted successfully.`,
+    });
+  } catch {
+    return NextResponse.json(
+      { success: false, error: "Failed to delete document" },
+      { status: 400 }
+    );
+  }
+}
+

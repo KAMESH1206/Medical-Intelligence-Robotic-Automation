@@ -48,5 +48,15 @@
     "avatar": "KR",
     "organization": "GH",
     "createdAt": "2026-11-10T05:41:19.684Z"
+  },
+  {
+    "id": "usr_1794978361983",
+    "name": "kamesh",
+    "email": "mrkamesh16@gmail.com",
+    "password": "kamesh123",
+    "role": "healthcare_admin",
+    "avatar": "KA",
+    "organization": "apollo",
+    "createdAt": "2026-11-18T05:06:01.983Z"
   }
 ]

@@ -148,7 +148,7 @@ Hello *${matchingApt?.patientName || profileName}*, we are happy to assist with 
     // SCENARIO 2: Patient selected a slot ("1", "2", "3") or provided new date/time
     // -------------------------------------------------------------
     else if (userState.step === "awaiting_slot_selection") {
-      let chosenSlot = userState.slots?.find((s: any) => s.key === bodyText);
+      const chosenSlot = userState.slots?.find((s: any) => s.key === bodyText);
       let newDate = "";
       let newTime = "";
 

@@ -651,139 +651,240 @@ If this cancellation was made in error or you would like to reschedule, please r
         </div>
       </div>
 
-      {/* Appointments List */}
+      {/* Appointments List & Mobile Cards */}
       <div className="rounded-xl bg-white border border-[#DFDEEB] shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="mira-table">
-            <thead>
-              <tr>
-                <th>Patient</th>
-                <th>Clinic</th>
-                <th>Date & Time</th>
-                <th>Service Type</th>
-                <th>Status</th>
-                <th className="text-right">Manage Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredAppointments.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="text-center py-12 text-[#74778A]">
-                    <div className="flex flex-col items-center justify-center gap-2">
-                      <div className="w-12 h-12 rounded-full bg-[#8DB9F0]/15 flex items-center justify-center text-[#8DB9F0]">
-                        <Calendar className="w-6 h-6" />
-                      </div>
-                      <div className="font-semibold text-sm text-[#25283A]">No Scheduled Appointments</div>
-                      <p className="text-xs text-[#74778A] max-w-sm">
-                        {appointments.length === 0
-                          ? "The calendar is open. Click '+ Book Appointment' to schedule a consultation with conflict checking."
-                          : "No appointments match your active search and filter criteria."}
-                      </p>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                filteredAppointments.map((apt) => (
-                  <tr key={apt.id}>
-                    <td>
-                      <div className="font-semibold text-xs text-[#25283A]">{apt.patientName}</div>
-                      {apt.notes && (
-                        <div className="text-[11px] text-[#74778A] truncate max-w-xs">{apt.notes}</div>
-                      )}
-                    </td>
-                    <td className="text-xs text-[#25283A] font-medium">{apt.clinicName || "—"}</td>
-                    <td>
-                      <div className="flex items-center gap-1.5 text-xs text-[#25283A]">
-                        <Calendar className="w-3.5 h-3.5 text-[#8DB9F0]" />
-                        <span>{apt.preferredDate}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-[11px] text-[#74778A]">
-                        <Clock className="w-3 h-3 text-[#9699AA]" />
-                        <span>{apt.preferredTime || "10:00 AM"}</span>
-                      </div>
-                    </td>
-                    <td>
-                      <span className="text-xs px-2 py-0.5 rounded bg-[#E9E8F8] text-[#25283A]">
-                        {apt.appointmentType || "General Consultation"}
-                      </span>
-                    </td>
-                    <td>
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span
-                          className={`mira-badge ${apt.status === "confirmed"
-                              ? "mira-badge-green"
-                              : apt.status === "requested"
-                                ? "mira-badge-blue"
-                                : apt.status === "pending_approval"
-                                  ? "mira-badge-peach"
-                                  : apt.status === "cancelled"
-                                    ? "mira-badge-red"
-                                    : "mira-badge-gray"
-                            }`}
-                        >
-                          {apt.status.replace("_", " ")}
+        {filteredAppointments.length === 0 ? (
+          <div className="text-center py-12 px-4 text-[#74778A]">
+            <div className="flex flex-col items-center justify-center gap-2">
+              <div className="w-12 h-12 rounded-full bg-[#8DB9F0]/15 flex items-center justify-center text-[#8DB9F0]">
+                <Calendar className="w-6 h-6" />
+              </div>
+              <div className="font-semibold text-sm text-[#25283A]">No Scheduled Appointments</div>
+              <p className="text-xs text-[#74778A] max-w-sm">
+                {appointments.length === 0
+                  ? "The calendar is open. Click '+ Book Appointment' to schedule a consultation with conflict checking."
+                  : "No appointments match your active search and filter criteria."}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Desktop / Tablet Table View */}
+            <div className="overflow-x-auto hidden md:block">
+              <table className="mira-table">
+                <thead>
+                  <tr>
+                    <th>Patient</th>
+                    <th>Clinic</th>
+                    <th>Date & Time</th>
+                    <th>Service Type</th>
+                    <th>Status</th>
+                    <th className="text-right">Manage Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredAppointments.map((apt) => (
+                    <tr key={apt.id}>
+                      <td>
+                        <div className="font-semibold text-xs text-[#25283A]">{apt.patientName}</div>
+                        {apt.notes && (
+                          <div className="text-[11px] text-[#74778A] truncate max-w-xs">{apt.notes}</div>
+                        )}
+                      </td>
+                      <td className="text-xs text-[#25283A] font-medium">{apt.clinicName || "—"}</td>
+                      <td>
+                        <div className="flex items-center gap-1.5 text-xs text-[#25283A]">
+                          <Calendar className="w-3.5 h-3.5 text-[#8DB9F0]" />
+                          <span>{apt.preferredDate}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[11px] text-[#74778A]">
+                          <Clock className="w-3 h-3 text-[#9699AA]" />
+                          <span>{apt.preferredTime || "10:00 AM"}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <span className="text-xs px-2 py-0.5 rounded bg-[#E9E8F8] text-[#25283A]">
+                          {apt.appointmentType || "General Consultation"}
                         </span>
-                        {(apt.status === "confirmed" || apt.status === "cancelled") && (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => openEmailInspector(apt)}
-                              className="inline-flex items-center gap-1 text-[11px] text-[#248A63] bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-1.5 py-0.5 rounded cursor-pointer transition font-medium"
-                              title={`Click to view automated ${apt.status} email`}
-                            >
-                              <MailCheck className="w-3 h-3 text-[#248A63]" />
-                              <span>Email</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => openWhatsappInspector(apt)}
-                              className="inline-flex items-center gap-1 text-[11px] text-emerald-800 bg-emerald-100/70 hover:bg-emerald-200 border border-emerald-300 px-1.5 py-0.5 rounded cursor-pointer transition font-medium"
-                              title={`Click to view automated ${apt.status} WhatsApp alert`}
-                            >
-                              <MessageSquare className="w-3 h-3 text-emerald-700" />
-                              <span>WhatsApp</span>
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </td>
-                    <td className="text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        {apt.status !== "confirmed" && (
-                          <button
-                            onClick={() => handleConfirmAppointment(apt)}
-                            className="px-2.5 py-1 rounded bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 text-xs font-semibold transition cursor-pointer flex items-center gap-1"
-                            title="Confirm Booking & Dispatch Confirmation Notice"
+                      </td>
+                      <td>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span
+                            className={`mira-badge ${apt.status === "confirmed"
+                                ? "mira-badge-green"
+                                : apt.status === "requested"
+                                  ? "mira-badge-blue"
+                                  : apt.status === "pending_approval"
+                                    ? "mira-badge-peach"
+                                    : apt.status === "cancelled"
+                                      ? "mira-badge-red"
+                                      : "mira-badge-gray"
+                              }`}
                           >
-                            <Check className="w-3.5 h-3.5" />
-                            <span>Confirm</span>
-                          </button>
-                        )}
-                        {apt.status !== "cancelled" && (
+                            {apt.status.replace("_", " ")}
+                          </span>
+                          {(apt.status === "confirmed" || apt.status === "cancelled") && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => openEmailInspector(apt)}
+                                className="inline-flex items-center gap-1 text-[11px] text-[#248A63] bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-1.5 py-0.5 rounded cursor-pointer transition font-medium"
+                                title={`Click to view automated ${apt.status} email`}
+                              >
+                                <MailCheck className="w-3 h-3 text-[#248A63]" />
+                                <span>Email</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => openWhatsappInspector(apt)}
+                                className="inline-flex items-center gap-1 text-[11px] text-emerald-800 bg-emerald-100/70 hover:bg-emerald-200 border border-emerald-300 px-1.5 py-0.5 rounded cursor-pointer transition font-medium"
+                                title={`Click to view automated ${apt.status} WhatsApp alert`}
+                              >
+                                <MessageSquare className="w-3 h-3 text-emerald-700" />
+                                <span>WhatsApp</span>
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                      <td className="text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          {apt.status !== "confirmed" && (
+                            <button
+                              onClick={() => handleConfirmAppointment(apt)}
+                              className="px-2.5 py-1 rounded bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 text-xs font-semibold transition cursor-pointer flex items-center gap-1"
+                              title="Confirm Booking & Dispatch Confirmation Notice"
+                            >
+                              <Check className="w-3.5 h-3.5" />
+                              <span>Confirm</span>
+                            </button>
+                          )}
+                          {apt.status !== "cancelled" && (
+                            <button
+                              onClick={() => handleCancelAppointment(apt)}
+                              className="px-2.5 py-1 rounded bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 text-xs font-semibold transition cursor-pointer"
+                              title="Cancel Booking & Dispatch Cancellation Notice"
+                            >
+                              Cancel
+                            </button>
+                          )}
                           <button
-                            onClick={() => handleCancelAppointment(apt)}
-                            className="px-2.5 py-1 rounded bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 text-xs font-semibold transition cursor-pointer"
-                            title="Cancel Booking & Dispatch Cancellation Notice"
+                            type="button"
+                            onClick={() => handleDeleteAppointment(apt.id, apt.patientName)}
+                            className="p-1.5 rounded text-[#9699AA] hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition cursor-pointer"
+                            title="Delete Appointment Record"
                           >
-                            Cancel
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
-                        )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card List View (< 768px) */}
+            <div className="md:hidden divide-y divide-[#DFDEEB]">
+              {filteredAppointments.map((apt) => (
+                <div key={apt.id} className="p-4 space-y-2.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="font-bold text-sm text-[#25283A]">{apt.patientName}</div>
+                      <div className="text-xs text-[#74778A]">{apt.clinicName || "—"}</div>
+                    </div>
+                    <span
+                      className={`mira-badge text-[10px] ${
+                        apt.status === "confirmed"
+                          ? "mira-badge-green"
+                          : apt.status === "requested"
+                          ? "mira-badge-blue"
+                          : apt.status === "pending_approval"
+                          ? "mira-badge-peach"
+                          : apt.status === "cancelled"
+                          ? "mira-badge-red"
+                          : "mira-badge-gray"
+                      }`}
+                    >
+                      {apt.status.replace("_", " ")}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs bg-[#F8F8FC] p-2.5 rounded-lg border border-[#DFDEEB]/60">
+                    <div className="flex items-center gap-1.5 text-[#25283A] font-medium">
+                      <Calendar className="w-3.5 h-3.5 text-[#8DB9F0]" />
+                      <span>{apt.preferredDate}</span>
+                      <span className="text-[#9699AA]">·</span>
+                      <Clock className="w-3.5 h-3.5 text-[#9699AA]" />
+                      <span>{apt.preferredTime || "10:00 AM"}</span>
+                    </div>
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-[#E9E8F8] text-[#25283A] font-semibold">
+                      {apt.appointmentType || "General"}
+                    </span>
+                  </div>
+
+                  {apt.notes && (
+                    <div className="text-[11px] text-[#74778A] bg-amber-50/50 p-2 rounded-lg border border-amber-200/40">
+                      <strong>Notes:</strong> {apt.notes}
+                    </div>
+                  )}
+
+                  {/* Notification inspectors & Quick Actions on Mobile */}
+                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                    {(apt.status === "confirmed" || apt.status === "cancelled") && (
+                      <>
                         <button
                           type="button"
-                          onClick={() => handleDeleteAppointment(apt.id, apt.patientName)}
-                          className="p-1.5 rounded text-[#9699AA] hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition cursor-pointer"
-                          title="Delete Appointment Record"
+                          onClick={() => openEmailInspector(apt)}
+                          className="flex-1 py-1.5 px-2 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-semibold flex items-center justify-center gap-1"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <MailCheck className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>View Email</span>
                         </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                        <button
+                          type="button"
+                          onClick={() => openWhatsappInspector(apt)}
+                          className="flex-1 py-1.5 px-2 rounded-lg bg-emerald-100 text-emerald-900 border border-emerald-300 text-xs font-semibold flex items-center justify-center gap-1"
+                        >
+                          <MessageSquare className="w-3.5 h-3.5 text-emerald-700" />
+                          <span>WhatsApp</span>
+                        </button>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-1 border-t border-[#DFDEEB]/50">
+                    {apt.status !== "confirmed" && (
+                      <button
+                        onClick={() => handleConfirmAppointment(apt)}
+                        className="flex-1 py-1.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                        <span>Confirm Booking</span>
+                      </button>
+                    )}
+                    {apt.status !== "cancelled" && (
+                      <button
+                        onClick={() => handleCancelAppointment(apt)}
+                        className="flex-1 py-1.5 px-3 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 text-xs font-semibold transition"
+                      >
+                        Cancel
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteAppointment(apt.id, apt.patientName)}
+                      className="p-1.5 rounded-lg border border-transparent hover:border-rose-200 hover:bg-rose-50 text-[#9699AA] hover:text-rose-600 transition"
+                      title="Delete Record"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       {/* New Appointment Modal */}

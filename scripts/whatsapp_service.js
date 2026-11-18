@@ -22,15 +22,22 @@ let latestQr = "";
 // Helper to resolve real phone number from LID
 function resolveRealPhone(senderJid) {
   if (!senderJid) return "";
+  const bareJid = senderJid.split("@")[0].split(":")[0].replace(/[^0-9]/g, "");
   if (senderJid.endsWith("@s.whatsapp.net")) {
-    return senderJid.replace(/[^0-9]/g, "");
+    return bareJid;
   }
   if (senderJid.endsWith("@lid")) {
-    const lidId = senderJid.split("@")[0].replace(/[^0-9]/g, "");
-    const reverseFile = path.resolve(SESSION_DIR, `lid-mapping-${lidId}_reverse.json`);
+    const reverseFile = path.resolve(SESSION_DIR, `lid-mapping-${bareJid}_reverse.json`);
     if (fs.existsSync(reverseFile)) {
       try {
         const raw = JSON.parse(fs.readFileSync(reverseFile, "utf-8"));
+        return String(raw).replace(/[^0-9]/g, "");
+      } catch {}
+    }
+    const fwdFile = path.resolve(SESSION_DIR, `lid-mapping-${bareJid}.json`);
+    if (fs.existsSync(fwdFile)) {
+      try {
+        const raw = JSON.parse(fs.readFileSync(fwdFile, "utf-8"));
         return String(raw).replace(/[^0-9]/g, "");
       } catch {}
     }
@@ -72,7 +79,6 @@ function normalizeTime(str) {
 
 // Generate real unbooked open slots after current appointment date
 function generateOpenSlots(currentApt, allAppointments) {
-  const clinic = currentApt?.clinicName || "Sydney Central Clinic";
   let baseDate = new Date();
 
   if (currentApt?.preferredDate) {
@@ -82,7 +88,7 @@ function generateOpenSlots(currentApt, allAppointments) {
     }
   }
 
-  const standardTimes = ["10:00 AM", "11:30 AM", "03:00 PM", "04:30 PM"];
+  const standardTimes = ["10:00 AM", "11:30 AM", "02:00 PM", "03:30 PM", "05:00 PM"];
   const slots = [];
   let dayOffset = 1;
 
@@ -93,11 +99,10 @@ function generateOpenSlots(currentApt, allAppointments) {
     for (const t of standardTimes) {
       if (slots.length >= 3) break;
 
-      // Check conflict at this clinic
+      // Check conflict across all confirmed appointments
       const isBooked = allAppointments.some(
         (a) =>
-          a.status === "confirmed" &&
-          (a.clinicName || "").toLowerCase() === clinic.toLowerCase() &&
+          (a.status === "confirmed" || a.status === "rescheduled") &&
           a.preferredDate === dateStr &&
           a.preferredTime === t
       );
@@ -113,16 +118,6 @@ function generateOpenSlots(currentApt, allAppointments) {
       }
     }
     dayOffset++;
-  }
-
-  // Fallback if no slots generated
-  if (slots.length === 0) {
-    const d1 = new Date(Date.now() + 86400000 * 3).toISOString().split("T")[0];
-    slots.push(
-      { key: "1", date: d1, time: "10:00 AM", label: `${d1} at 10:00 AM` },
-      { key: "2", date: d1, time: "02:00 PM", label: `${d1} at 02:00 PM` },
-      { key: "3", date: d1, time: "04:00 PM", label: `${d1} at 04:00 PM` }
-    );
   }
 
   return slots;
@@ -174,14 +169,21 @@ async function startWhatsApp() {
 
   // Handle Inbound Patient Messages (Two-Way Rescheduling Bot)
   sock.ev.on("messages.upsert", async ({ messages, type }) => {
-    if (type !== "notify") return;
-
+    // Process new notifications and recent appended messages
     for (const msg of messages) {
-      const senderJid = msg.key.remoteJid;
+      const senderJid = msg.key?.remoteJid;
       if (!senderJid) continue;
 
-      // Only accept private chats
-      if (!senderJid.endsWith("@s.whatsapp.net") && !senderJid.endsWith("@lid")) continue;
+      // Only accept private chats (ends with @s.whatsapp.net or @lid)
+      const isPrivateChat = senderJid.includes("@s.whatsapp.net") || senderJid.includes("@lid");
+      if (!isPrivateChat) continue;
+
+      // Filter out messages older than 15 minutes to prevent stale re-processing
+      const nowSec = Math.floor(Date.now() / 1000);
+      const msgSec = Number(msg.messageTimestamp || 0);
+      if (type === "append" && msgSec && nowSec - msgSec > 900) {
+        continue;
+      }
 
       const patientPushName = msg.pushName || "";
       const messageText = (
@@ -194,32 +196,24 @@ async function startWhatsApp() {
 
       if (!messageText) continue;
 
-      // Avoid infinite loop on bot's own output
+      // 1. NEVER process messages sent from self/clinic account
+      if (msg.key.fromMe) {
+        continue;
+      }
+
+      // 2. Avoid infinite loops on bot templates
       if (
-        messageText.includes("CLINICAL BOT") ||
-        messageText.includes("APPOINTMENT RESCHEDULED") ||
-        messageText.includes("Available Open Slots")
+        messageText.includes("CLINICAL") ||
+        messageText.includes("APPOINTMENT") ||
+        messageText.includes("MIRA HEALTHCARE") ||
+        messageText.includes("SLOT ALREADY BOOKED") ||
+        messageText.includes("Available Open") ||
+        messageText.includes("FULLY BOOKED")
       ) {
         continue;
       }
 
-      // If message is from self, only proceed if it is an explicit command
       const lowerText = messageText.toLowerCase();
-      const isBotCommand =
-        lowerText.includes("reschedule") ||
-        lowerText.includes("rebook") ||
-        lowerText.includes("change") ||
-        lowerText === "1" ||
-        lowerText === "2" ||
-        lowerText === "3" ||
-        lowerText.includes("confirm") ||
-        lowerText.includes("yes") ||
-        lowerText.includes("ok") ||
-        /\d{4}[-/]\d{1,2}/.test(messageText);
-
-      if (msg.key.fromMe && !isBotCommand) {
-        continue;
-      }
 
       // Resolve Real Phone Number from LID mapping
       const resolvedPhone = resolveRealPhone(senderJid);
@@ -338,35 +332,75 @@ Hello *${matchingApt.patientName}*, we can help you reschedule your appointment 
           newTime = parsedT;
         }
 
-        // Check Clinic Conflict
+        // Check Global Schedule & Clinic Conflict
         const targetClinic = userState.clinicName || matchingApt.clinicName;
         const targetAptId = userState.aptId || matchingApt.id;
 
-        const hasConflict = appointments.some(
+        const conflictApt = appointments.find(
           (a) =>
             a.id !== targetAptId &&
-            a.status === "confirmed" &&
-            (a.clinicName || "").toLowerCase() === targetClinic.toLowerCase() &&
+            (a.status === "confirmed" || a.status === "rescheduled") &&
             a.preferredDate === newDate &&
             a.preferredTime === newTime
         );
 
-        if (hasConflict) {
-          const altSlots = generateOpenSlots(matchingApt, appointments);
-          userState.slots = altSlots;
-          botStates[userKey] = userState;
-          fs.writeFileSync(BOT_STATE_FILE, JSON.stringify(botStates, null, 2), "utf-8");
+        if (conflictApt) {
+          // Check other open time slots on the SAME DAY
+          const standardTimes = ["09:00 AM", "10:00 AM", "11:30 AM", "02:00 PM", "03:30 PM", "05:00 PM"];
+          const sameDayOpenTimes = standardTimes.filter((t) => {
+            return !appointments.some(
+              (a) =>
+                a.id !== targetAptId &&
+                (a.status === "confirmed" || a.status === "rescheduled") &&
+                a.preferredDate === newDate &&
+                a.preferredTime === t
+            );
+          });
 
-          replyText = `⚠️ *SLOT ALREADY BOOKED*
+          let offeredSlots = [];
+          if (sameDayOpenTimes.length > 0) {
+            offeredSlots = sameDayOpenTimes.slice(0, 3).map((t, idx) => ({
+              key: String(idx + 1),
+              date: newDate,
+              time: t,
+              label: `${newDate} at ${t}`,
+            }));
+
+            userState.step = "awaiting_slot_selection";
+            userState.slots = offeredSlots;
+            botStates[userKey] = userState;
+            fs.writeFileSync(BOT_STATE_FILE, JSON.stringify(botStates, null, 2), "utf-8");
+
+            replyText = `⚠️ *SLOT ALREADY BOOKED*
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Dear *${matchingApt.patientName}*, the slot on *${newDate} at ${newTime}* at *${targetClinic}* is already booked by another patient.
+Dear *${matchingApt.patientName}*, the slot on *${newDate} at ${newTime}* is already booked by another patient.
 
-📅 *Please choose from these verified open slots:*
-1️⃣ *${altSlots[0]?.label}*
-2️⃣ *${altSlots[1]?.label}*
-3️⃣ *${altSlots[2]?.label}*
+🕒 *Open Time Slots Available on the SAME DAY (${newDate}):*
+1️⃣ *${offeredSlots[0]?.label}*
+${offeredSlots[1] ? `2️⃣ *${offeredSlots[1]?.label}*` : ""}
+${offeredSlots[2] ? `3️⃣ *${offeredSlots[2]?.label}*` : ""}
 
-👉 Reply with 1, 2, or 3 (or enter another date & time).`;
+👉 *Reply with 1, 2, or 3* to select an available time on ${newDate}.
+*(Or reply with another date, e.g. "2026-11-28 11:00 AM")*`;
+          } else {
+            // Entire day is booked, offer subsequent days
+            offeredSlots = generateOpenSlots(matchingApt, appointments);
+            userState.step = "awaiting_slot_selection";
+            userState.slots = offeredSlots;
+            botStates[userKey] = userState;
+            fs.writeFileSync(BOT_STATE_FILE, JSON.stringify(botStates, null, 2), "utf-8");
+
+            replyText = `⚠️ *${newDate} IS FULLY BOOKED*
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Dear *${matchingApt.patientName}*, all slots on *${newDate}* are currently booked.
+
+📅 *Next Available Open Dates & Times:*
+1️⃣ *${offeredSlots[0]?.label}*
+2️⃣ *${offeredSlots[1]?.label}*
+3️⃣ *${offeredSlots[2]?.label}*
+
+👉 *Reply with 1, 2, or 3* to select an alternative date.`;
+          }
         } else {
           // No Conflict! Update the EXACT appointment record
           const updatedAppointments = appointments.map((a) => {
@@ -414,7 +448,11 @@ Reply *RESCHEDULE* if you ever need to change it.`;
 
       if (replyText) {
         console.log(`🤖 [BOT REPLYING to ${senderJid}]:\n${replyText}\n`);
-        await sock.sendMessage(senderJid, { text: replyText });
+        try {
+          await sock.sendMessage(senderJid, { text: replyText });
+        } catch (sendErr) {
+          console.error("❌ Failed to send reply to " + senderJid, sendErr.message);
+        }
       }
     }
   });

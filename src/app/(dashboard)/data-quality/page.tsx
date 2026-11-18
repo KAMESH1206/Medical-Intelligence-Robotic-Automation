@@ -144,7 +144,8 @@ export default function DataQualityPage() {
       {/* Tab 1: Validation Issues */}
       {activeTab === "issues" && (
         <div className="rounded-xl bg-white border border-[#DFDEEB] shadow-xs overflow-hidden">
-          <table className="mira-table">
+          <div className="overflow-x-auto">
+            <table className="mira-table">
             <thead>
               <tr>
                 <th>Record Target</th>
@@ -210,6 +211,7 @@ export default function DataQualityPage() {
               )}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 
@@ -217,7 +219,8 @@ export default function DataQualityPage() {
       {activeTab === "duplicates" && (
         <div className="space-y-4">
           <div className="rounded-xl bg-white border border-[#DFDEEB] shadow-xs overflow-hidden">
-            <table className="mira-table">
+            <div className="overflow-x-auto">
+              <table className="mira-table">
               <thead>
                 <tr>
                   <th>Primary Record</th>
@@ -317,6 +320,7 @@ export default function DataQualityPage() {
                 )))}
               </tbody>
             </table>
+            </div>
           </div>
           <div className="p-3 rounded-xl bg-[#E9E8F8]/40 border border-[#DFDEEB] text-xs text-[#74778A]">
             <span className="font-semibold text-[#25283A]">Healthcare Privacy Compliance Notice:</span> Duplicate records are never auto-merged without explicit clinical/administrative authorization, ensuring patient safety and record continuity.

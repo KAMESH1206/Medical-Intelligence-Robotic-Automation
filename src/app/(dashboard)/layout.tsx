@@ -22,14 +22,14 @@ export default function DashboardLayout({
   }, [isAuthenticated, isAuthLoading, router]);
 
   return (
-    <div className="flex min-h-screen bg-[#F8F8FC]">
-      {/* Left Sidebar */}
+    <div className="flex min-h-[100dvh] bg-[#F8F8FC]">
+      {/* Left Sidebar (Desktop persistent, Mobile slide-over drawer) */}
       <Sidebar />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 h-[100dvh] overflow-hidden">
         <TopNav />
-        <main className="flex-1 p-6 overflow-y-auto page-enter">
+        <main className="flex-1 p-3.5 sm:p-6 overflow-y-auto page-enter touch-pan-y pb-[calc(env(safe-area-inset-bottom)+1.5rem)]">
           {children}
         </main>
       </div>

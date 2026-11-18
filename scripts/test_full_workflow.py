@@ -110,8 +110,24 @@ try:
     has_phone = parsed["phone"]["value"] is not None
     confidence = extraction["confidence"]
     
-    record("3. Document OCR & AI Entity Extraction", has_name and confidence >= 0.85, 
-           f"Extracted entity Name='{parsed['patientName']['value']}', Phone='{parsed['phone']['value']}', Confidence={confidence * 100:.0f}%.")
+    # Also verify the 5 healthcare sample PDFs are generated and available
+    sample_files = [
+        "1_Doctor_Referral_Letter_Cardiology.pdf",
+        "2_Patient_Intake_Registration_Form.pdf",
+        "3_Medical_Prescription_Slip.pdf",
+        "4_Pathology_Blood_Panel_Report.pdf",
+        "5_Hospital_Discharge_Summary.pdf"
+    ]
+    sample_dir = os.path.join("sample_documents")
+    public_sample_dir = os.path.join("public", "sample_documents")
+    all_samples_present = all(
+        os.path.exists(os.path.join(sample_dir, f)) and os.path.exists(os.path.join(public_sample_dir, f))
+        for f in sample_files
+    )
+
+    passed_doc = has_name and confidence >= 0.85 and all_samples_present
+    record("3. Document OCR & AI Entity Extraction", passed_doc, 
+           f"Extracted entity Name='{parsed['patientName']['value']}', Phone='{parsed['phone']['value']}', Confidence={confidence * 100:.0f}%. Verified {len(sample_files)} clinical sample PDFs ready for testing.")
 except Exception as e:
     record("3. Document OCR & AI Entity Extraction", False, str(e))
 
@@ -161,8 +177,33 @@ try:
     ).first()
     
     conflict_detected = existing is not None
-    record("5. Smart Appointments & Conflict Prevention", conflict_detected, 
-           f"Conflict check successfully prevented collision at {clinic} on {appt_date} at {appt_time}.")
+
+    # Also verify live file storage (data/appointments_state.json) used by store.tsx & WhatsApp bot
+    state_file = os.path.join("data", "appointments_state.json")
+    live_file_valid = False
+    if os.path.exists(state_file):
+        with open(state_file, "r", encoding="utf-8") as f:
+            live_apts = json.load(f)
+        live_file_valid = isinstance(live_apts, list) and len(live_apts) > 0
+        # Check conflict prevention on live file
+        balavarshini_apt = next((a for a in live_apts if "BALAVARSHINI" in a.get("patientName", "").upper()), None)
+        if balavarshini_apt:
+            b_date = balavarshini_apt["preferredDate"]
+            b_time = balavarshini_apt["preferredTime"]
+            # A duplicate booking with same date & time is detected as conflict
+            has_slot_collision = any(
+                a["id"] != balavarshini_apt["id"] and
+                a.get("status") in ["confirmed", "rescheduled"] and
+                a.get("preferredDate") == b_date and
+                a.get("preferredTime") == b_time
+                for a in live_apts
+            )
+            # Live slot collision should be 0 because system prevents it
+            assert not has_slot_collision, "Zero schedule collisions in live appointments file"
+
+    passed_appointments = conflict_detected and live_file_valid
+    record("5. Smart Appointments & Conflict Prevention", passed_appointments, 
+           f"Conflict check successfully prevented collisions; verified live persistence in 'data/appointments_state.json'.")
 except Exception as e:
     record("5. Smart Appointments & Conflict Prevention", False, str(e))
 

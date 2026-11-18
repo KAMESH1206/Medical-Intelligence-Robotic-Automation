@@ -5,6 +5,7 @@ import React, { useState } from "react";
 import { useMiraStore } from "@/lib/store";
 import { CLINIC_LOCATIONS, ENQUIRY_CATEGORIES, ROLE_PERMISSIONS } from "@/lib/constants";
 import type { Patient, PatientStatus } from "@/lib/types";
+import VoiceScribeModal from "@/components/VoiceScribeModal";
 import {
   UserPlus,
   Search,
@@ -19,6 +20,7 @@ import {
   Building,
   Lock,
   X,
+  Mic,
 } from "lucide-react";
 
 export default function PatientsPage() {
@@ -29,6 +31,7 @@ export default function PatientsPage() {
   const [clinicFilter, setClinicFilter] = useState<string>("all");
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isVoiceScribeOpen, setIsVoiceScribeOpen] = useState(false);
   const [isCustomClinic, setIsCustomClinic] = useState(false);
   const [customClinic, setCustomClinic] = useState("");
 
@@ -132,6 +135,14 @@ export default function PatientsPage() {
         </div>
         <div className="flex items-center gap-2">
           <button
+            type="button"
+            onClick={() => setIsVoiceScribeOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#8DB9F0] bg-white hover:bg-[#F5F8FF] text-xs font-semibold text-[#25283A] transition shadow-xs cursor-pointer"
+          >
+            <Mic className="w-4 h-4 text-rose-600 animate-pulse" />
+            <span>AI Medical Voice Scribe</span>
+          </button>
+          <button
             onClick={exportCSV}
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#DFDEEB] bg-white hover:bg-[#F8F8FC] text-xs font-medium text-[#25283A] transition"
           >
@@ -208,128 +219,214 @@ export default function PatientsPage() {
         </div>
       </div>
 
-      {/* Patients Table */}
+      {/* Patients Table & Mobile Cards */}
       <div className="rounded-xl bg-white border border-[#DFDEEB] shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="mira-table">
-            <thead>
-              <tr>
-                <th>Patient / Ref</th>
-                <th>Contact</th>
-                <th>Clinic & Category</th>
-                <th>Quality Score</th>
-                <th>Status</th>
-                <th className="text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredPatients.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="text-center py-12 text-[#74778A]">
-                    <div className="flex flex-col items-center justify-center gap-2">
-                      <div className="w-12 h-12 rounded-full bg-[#8DB9F0]/15 flex items-center justify-center text-[#8DB9F0]">
-                        <UserPlus className="w-6 h-6" />
-                      </div>
-                      <div className="font-semibold text-sm text-[#25283A]">No Patient Enquiries in Queue</div>
-                      <p className="text-xs text-[#74778A] max-w-sm">
-                        {patients.length === 0
-                          ? "Your intake queue is clean. Click '+ New Patient Intake' to submit and validate a real patient enquiry."
-                          : "No records match your current search and filter criteria."}
-                      </p>
-                      {patients.length === 0 && perms.canAddPatient && (
-                        <button
-                          type="button"
-                          onClick={() => setIsAddModalOpen(true)}
-                          className="mt-2 mira-btn-primary text-xs cursor-pointer"
-                        >
-                          + New Patient Intake
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                filteredPatients.map((patient) => (
-                  <tr key={patient.id} className="transition-colors">
-                    <td>
-                      <div className="font-semibold text-[#25283A]">{patient.name}</div>
-                      <div className="text-[11px] text-[#74778A] font-mono">{patient.referenceId}</div>
-                    </td>
-                    <td>
-                      <div className="text-xs text-[#25283A]">{patient.phone || <span className="text-rose-500 font-medium">Missing phone</span>}</div>
-                      <div className="text-[11px] text-[#74778A]">{patient.email || <span className="text-rose-500 font-medium">Missing email</span>}</div>
-                    </td>
-                    <td>
-                      <div className="text-xs font-medium text-[#25283A]">{patient.preferredClinic || "—"}</div>
-                      <div className="text-[11px] text-[#74778A]">{patient.enquiryCategory || "General"}</div>
-                    </td>
-                    <td>
-                      <div className="flex items-center gap-2">
-                        <div className="w-16 h-2 rounded-full bg-[#E9E8F8] overflow-hidden">
-                          <div
-                            className={`h-full rounded-full ${
-                              (patient.validationScore || 0) >= 90
-                                ? "bg-[#248A63]"
-                                : (patient.validationScore || 0) >= 70
-                                ? "bg-[#8DB9F0]"
-                                : "bg-[#F5B69E]"
-                            }`}
-                            style={{ width: `${patient.validationScore || 0}%` }}
-                          />
-                        </div>
-                        <span className="text-xs font-semibold text-[#25283A]">
-                          {patient.validationScore || 0}%
-                        </span>
-                      </div>
-                      {patient.missingFields && patient.missingFields.length > 0 && (
-                        <div className="text-[10px] text-[#EE9478] font-medium mt-0.5">
-                          Missing: {patient.missingFields.join(", ")}
-                        </div>
-                      )}
-                    </td>
-                    <td>
-                      <span
-                        className={`mira-badge ${
-                          patient.status === "active"
-                            ? "mira-badge-green"
-                            : patient.status === "pending_review"
-                            ? "mira-badge-peach"
-                            : "mira-badge-yellow"
-                        }`}
-                      >
-                        {patient.status.replace("_", " ")}
-                      </span>
-                    </td>
-                    <td className="text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <button
-                          onClick={() => setSelectedPatient(patient)}
-                          className="p-1.5 rounded-lg border border-[#DFDEEB] text-[#74778A] hover:bg-[#E9E8F8] hover:text-[#25283A] transition"
-                          title="View Details"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                        </button>
-                        {perms.canDeletePatient && (
-                          <button
-                            onClick={() => {
-                              if (confirm(`Remove record for ${patient.name}?`)) {
-                                deletePatient(patient.id);
-                              }
-                            }}
-                            className="p-1.5 rounded-lg border border-[#DFDEEB] text-[#74778A] hover:bg-rose-50 hover:text-rose-600 transition cursor-pointer"
-                            title="Super Admin: Delete Record"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
+        {filteredPatients.length === 0 ? (
+          <div className="text-center py-12 px-4 text-[#74778A]">
+            <div className="flex flex-col items-center justify-center gap-2">
+              <div className="w-12 h-12 rounded-full bg-[#8DB9F0]/15 flex items-center justify-center text-[#8DB9F0]">
+                <UserPlus className="w-6 h-6" />
+              </div>
+              <div className="font-semibold text-sm text-[#25283A]">No Patient Enquiries in Queue</div>
+              <p className="text-xs text-[#74778A] max-w-sm">
+                {patients.length === 0
+                  ? "Your intake queue is clean. Click '+ New Patient Intake' to submit and validate a real patient enquiry."
+                  : "No records match your current search and filter criteria."}
+              </p>
+              {patients.length === 0 && perms.canAddPatient && (
+                <button
+                  type="button"
+                  onClick={() => setIsAddModalOpen(true)}
+                  className="mt-2 mira-btn-primary text-xs cursor-pointer"
+                >
+                  + New Patient Intake
+                </button>
               )}
-            </tbody>
-          </table>
-        </div>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Desktop / Tablet Table View */}
+            <div className="overflow-x-auto hidden md:block">
+              <table className="mira-table">
+                <thead>
+                  <tr>
+                    <th>Patient / Ref</th>
+                    <th>Contact</th>
+                    <th>Clinic & Category</th>
+                    <th>Quality Score</th>
+                    <th>Status</th>
+                    <th className="text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredPatients.map((patient) => (
+                    <tr key={patient.id} className="transition-colors">
+                      <td>
+                        <div className="font-semibold text-[#25283A]">{patient.name}</div>
+                        <div className="text-[11px] text-[#74778A] font-mono">{patient.referenceId}</div>
+                      </td>
+                      <td>
+                        <div className="text-xs text-[#25283A]">{patient.phone || <span className="text-rose-500 font-medium">Missing phone</span>}</div>
+                        <div className="text-[11px] text-[#74778A]">{patient.email || <span className="text-rose-500 font-medium">Missing email</span>}</div>
+                      </td>
+                      <td>
+                        <div className="text-xs font-medium text-[#25283A]">{patient.preferredClinic || "—"}</div>
+                        <div className="text-[11px] text-[#74778A]">{patient.enquiryCategory || "General"}</div>
+                      </td>
+                      <td>
+                        <div className="flex items-center gap-2">
+                          <div className="w-16 h-2 rounded-full bg-[#E9E8F8] overflow-hidden">
+                            <div
+                              className={`h-full rounded-full ${
+                                (patient.validationScore || 0) >= 90
+                                  ? "bg-[#248A63]"
+                                  : (patient.validationScore || 0) >= 70
+                                  ? "bg-[#8DB9F0]"
+                                  : "bg-[#F5B69E]"
+                              }`}
+                              style={{ width: `${patient.validationScore || 0}%` }}
+                            />
+                          </div>
+                          <span className="text-xs font-semibold text-[#25283A]">
+                            {patient.validationScore || 0}%
+                          </span>
+                        </div>
+                        {patient.missingFields && patient.missingFields.length > 0 && (
+                          <div className="text-[10px] text-[#EE9478] font-medium mt-0.5">
+                            Missing: {patient.missingFields.join(", ")}
+                          </div>
+                        )}
+                      </td>
+                      <td>
+                        <span
+                          className={`mira-badge ${
+                            patient.status === "active"
+                              ? "mira-badge-green"
+                              : patient.status === "pending_review"
+                              ? "mira-badge-peach"
+                              : "mira-badge-yellow"
+                          }`}
+                        >
+                          {patient.status.replace("_", " ")}
+                        </span>
+                      </td>
+                      <td className="text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => setSelectedPatient(patient)}
+                            className="p-1.5 rounded-lg border border-[#DFDEEB] text-[#74778A] hover:bg-[#E9E8F8] hover:text-[#25283A] transition"
+                            title="View Details"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </button>
+                          {perms.canDeletePatient && (
+                            <button
+                              onClick={() => {
+                                if (confirm(`Remove record for ${patient.name}?`)) {
+                                  deletePatient(patient.id);
+                                }
+                              }}
+                              className="p-1.5 rounded-lg border border-[#DFDEEB] text-[#74778A] hover:bg-rose-50 hover:text-rose-600 transition cursor-pointer"
+                              title="Super Admin: Delete Record"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card List View (< 768px) */}
+            <div className="md:hidden divide-y divide-[#DFDEEB]">
+              {filteredPatients.map((patient) => (
+                <div key={patient.id} className="p-4 space-y-2.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="font-bold text-sm text-[#25283A]">{patient.name}</div>
+                      <div className="text-[11px] text-[#74778A] font-mono">{patient.referenceId}</div>
+                    </div>
+                    <span
+                      className={`mira-badge text-[10px] ${
+                        patient.status === "active"
+                          ? "mira-badge-green"
+                          : patient.status === "pending_review"
+                          ? "mira-badge-peach"
+                          : "mira-badge-yellow"
+                      }`}
+                    >
+                      {patient.status.replace("_", " ")}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs bg-[#F8F8FC] p-2.5 rounded-lg border border-[#DFDEEB]/60">
+                    <div>
+                      <div className="text-[10px] font-semibold text-[#74778A] uppercase">Clinic & Type</div>
+                      <div className="font-semibold text-[#25283A] mt-0.5">{patient.preferredClinic || "—"}</div>
+                      <div className="text-[11px] text-[#74778A]">{patient.enquiryCategory || "General"}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[10px] font-semibold text-[#74778A] uppercase">Quality Score</div>
+                      <div className="text-sm font-bold text-[#25283A] mt-0.5">{patient.validationScore || 0}%</div>
+                    </div>
+                  </div>
+
+                  {patient.missingFields && patient.missingFields.length > 0 && (
+                    <div className="text-[11px] text-[#EE9478] bg-[#FFF3DC] p-2 rounded-lg border border-[#D99035]/30">
+                      <strong>Missing Fields:</strong> {patient.missingFields.join(", ")}
+                    </div>
+                  )}
+
+                  <div className="text-xs space-y-1 text-[#74778A]">
+                    {patient.phone && (
+                      <div>
+                        Phone:{" "}
+                        <a href={`tel:${patient.phone}`} className="text-[#6BA3E8] font-medium hover:underline">
+                          {patient.phone}
+                        </a>
+                      </div>
+                    )}
+                    {patient.email && (
+                      <div>
+                        Email:{" "}
+                        <a href={`mailto:${patient.email}`} className="text-[#6BA3E8] hover:underline">
+                          {patient.email}
+                        </a>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      onClick={() => setSelectedPatient(patient)}
+                      className="flex-1 py-2 px-3 rounded-lg border border-[#DFDEEB] bg-white hover:bg-[#F8F8FC] text-xs font-semibold text-[#25283A] flex items-center justify-center gap-1.5 transition"
+                    >
+                      <Eye className="w-3.5 h-3.5 text-[#8DB9F0]" />
+                      <span>View Full Record</span>
+                    </button>
+                    {perms.canDeletePatient && (
+                      <button
+                        onClick={() => {
+                          if (confirm(`Remove record for ${patient.name}?`)) {
+                            deletePatient(patient.id);
+                          }
+                        }}
+                        className="p-2 rounded-lg border border-[#DFDEEB] bg-rose-50 text-rose-600 hover:bg-rose-100 transition"
+                        title="Delete Patient"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
         <div className="p-3 border-t border-[#DFDEEB] bg-[#F8F8FC] flex items-center justify-between text-xs text-[#74778A]">
           <span>Showing {filteredPatients.length} of {patients.length} records</span>
           <span className="text-[11px] text-[#9699AA]">Verified Clinical Operations Data</span>
@@ -563,6 +660,12 @@ export default function PatientsPage() {
           </div>
         </div>
       )}
+
+      {/* AI Medical Voice Scribe Modal */}
+      <VoiceScribeModal
+        isOpen={isVoiceScribeOpen}
+        onClose={() => setIsVoiceScribeOpen(false)}
+      />
     </div>
   );
 }

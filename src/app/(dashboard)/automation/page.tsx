@@ -109,7 +109,7 @@ export default function AutomationPage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-3 border-t border-[#DFDEEB] text-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-3 border-t border-[#DFDEEB] text-xs">
               <div className="text-[#74778A]">
                 Executed <span className="font-bold text-[#25283A]">{wf.totalExecutions}</span> times
                 ({wf.successfulExecutions} success)
@@ -117,7 +117,7 @@ export default function AutomationPage() {
               <button
                 onClick={() => handleRun(wf.id)}
                 disabled={runningId === wf.id || !perms.canExecuteWorkflows}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 ${
+                className={`w-full sm:w-auto justify-center px-3 py-2 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 ${
                   perms.canExecuteWorkflows
                     ? "bg-[#8DB9F0] text-white hover:bg-[#6BA3E8] cursor-pointer"
                     : "bg-[#F8F8FC] border border-[#DFDEEB] text-[#9699AA] cursor-not-allowed"

@@ -52,7 +52,7 @@ export default function DemoGuideModal() {
       {/* Floating Operations Reference Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-40 flex items-center gap-2 px-3.5 py-2 rounded-full bg-white border border-[#DFDEEB] text-[#25283A] text-xs font-semibold shadow-md hover:bg-[#F8F8FC] hover:border-[#8DB9F0] transition-all cursor-pointer"
+        className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-30 flex items-center gap-2 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-full bg-white border border-[#DFDEEB] text-[#25283A] text-xs font-semibold shadow-md hover:bg-[#F8F8FC] hover:border-[#8DB9F0] transition-all cursor-pointer"
         title="View Platform Capabilities Reference"
       >
         <HelpCircle className="w-4 h-4 text-[#8DB9F0]" />
