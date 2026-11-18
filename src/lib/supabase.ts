@@ -203,3 +203,61 @@ export async function deleteSupabaseAppointment(id: string): Promise<boolean> {
     return false;
   }
 }
+
+export interface SupabaseAuthUser {
+  id: string;
+  name: string;
+  email: string;
+  password?: string;
+  role: "super_admin" | "healthcare_admin" | "data_coordinator" | "operations_executive" | "viewer";
+  avatar: string;
+  organization?: string;
+  created_at?: string;
+}
+
+export async function getSupabaseUserByEmail(email: string): Promise<SupabaseAuthUser | null> {
+  if (!supabase) return null;
+  try {
+    const { data, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("email", email.trim().toLowerCase())
+      .single();
+
+    if (error || !data) return null;
+
+    return {
+      id: data.id,
+      name: data.name,
+      email: data.email,
+      password: data.password,
+      role: data.role || "healthcare_admin",
+      avatar: data.avatar || "MO",
+      organization: data.organization,
+      created_at: data.created_at,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function insertSupabaseUser(user: SupabaseAuthUser): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const { error } = await supabase.from("users").upsert([
+      {
+        id: user.id,
+        name: user.name,
+        email: user.email.trim().toLowerCase(),
+        password: user.password,
+        role: user.role,
+        avatar: user.avatar,
+        organization: user.organization,
+        created_at: user.created_at || new Date().toISOString(),
+      },
+    ]);
+    return !error;
+  } catch {
+    return false;
+  }
+}

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createStoredUser, findUserByEmail, type AuthUser } from "@/lib/auth";
+import { insertSupabaseUser, getSupabaseUserByEmail } from "@/lib/supabase";
 
 export async function POST(request: Request) {
   try {
@@ -30,7 +31,8 @@ export async function POST(request: Request) {
 
     const normalizedEmail = email.trim().toLowerCase();
     const existing = findUserByEmail(normalizedEmail);
-    if (existing) {
+    const existingCloud = await getSupabaseUserByEmail(normalizedEmail);
+    if (existing || existingCloud) {
       return NextResponse.json(
         { success: false, error: "An account with this email address already exists. Please sign in instead." },
         { status: 409 }
@@ -55,6 +57,18 @@ export async function POST(request: Request) {
       role: userRole,
       organization: organization?.trim() || "Clinical Operations Network",
     });
+
+    // Cloud Database Sync: Insert user into Supabase
+    await insertSupabaseUser({
+      id: newUser.id,
+      name: newUser.name,
+      email: newUser.email,
+      password,
+      role: newUser.role,
+      avatar: newUser.avatar,
+      organization: newUser.organization,
+      created_at: new Date().toISOString(),
+    }).catch(() => {});
 
     // Build session token payload
     const sessionToken = `mira_jwt_${Buffer.from(JSON.stringify(newUser)).toString("base64")}`;

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { findUserByEmail } from "@/lib/auth";
+import { findUserByEmail, type StoredUser } from "@/lib/auth";
+import { getSupabaseUserByEmail } from "@/lib/supabase";
 
 export async function POST(request: Request) {
   try {
@@ -16,7 +17,23 @@ export async function POST(request: Request) {
     }
 
     const normalizedEmail = email.trim().toLowerCase();
-    const account = findUserByEmail(normalizedEmail);
+    let account: StoredUser | null = findUserByEmail(normalizedEmail) || null;
+
+    if (!account) {
+      const cloudUser = await getSupabaseUserByEmail(normalizedEmail);
+      if (cloudUser) {
+        account = {
+          id: cloudUser.id,
+          name: cloudUser.name,
+          email: cloudUser.email,
+          password: cloudUser.password,
+          role: cloudUser.role,
+          avatar: cloudUser.avatar,
+          organization: cloudUser.organization,
+          createdAt: cloudUser.created_at,
+        };
+      }
+    }
 
     if (!account) {
       return NextResponse.json(
