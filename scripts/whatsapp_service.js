@@ -5,7 +5,7 @@ const http = require("http");
 const path = require("path");
 const fs = require("fs");
 
-const PORT = process.env.WHATSAPP_PORT || 8085;
+const PORT = process.env.PORT || process.env.WHATSAPP_PORT || 8085;
 const SESSION_DIR = path.resolve(process.cwd(), "data/whatsapp_session");
 const APPOINTMENTS_FILE = path.resolve(process.cwd(), "data/appointments_state.json");
 const BOT_STATE_FILE = path.resolve(process.cwd(), "data/whatsapp_bot_state.json");
@@ -471,6 +471,53 @@ const server = http.createServer(async (req, res) => {
   }
 
   const url = new URL(req.url, `http://localhost:${PORT}`);
+
+  // Web Dashboard / QR Code Page for Cloud Hosting
+  if (url.pathname === "/" || url.pathname === "/qr") {
+    res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+    if (isConnected) {
+      res.end(`<!DOCTYPE html>
+<html>
+<head><title>MIRA WhatsApp Cloud Bot</title><meta name="viewport" content="width=device-width, initial-scale=1"></head>
+<body style="font-family:system-ui,-apple-system,sans-serif;text-align:center;padding:40px;background:#F0F2F5;">
+  <div style="max-width:440px;margin:auto;background:white;padding:32px;border-radius:20px;box-shadow:0 8px 30px rgba(0,0,0,0.08);border:1px solid #DFDEEB;">
+    <div style="width:56px;height:56px;background:#D9FDD3;border-radius:50%;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:28px;">✅</div>
+    <h2 style="color:#111B21;margin:0 0 8px;">WhatsApp Bot Connected</h2>
+    <p style="color:#667781;font-size:14px;margin:0 0 20px;">Linked Phone: <b style="color:#075E54;">+${userPhone || "917397186456"}</b></p>
+    <div style="background:#E8F5E9;color:#2E7D32;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:600;border:1px solid #C8E6C9;">
+      ● Cloud Dispatcher Active 24/7
+    </div>
+    <p style="color:#8696A0;font-size:12px;margin:20px 0 0;">MIRA Ops Healthcare Intelligence Engine</p>
+  </div>
+</body>
+</html>`);
+    } else if (latestQr) {
+      res.end(`<!DOCTYPE html>
+<html>
+<head><title>Pair WhatsApp - MIRA Bot</title><meta name="viewport" content="width=device-width, initial-scale=1"><meta http-equiv="refresh" content="5"></head>
+<body style="font-family:system-ui,-apple-system,sans-serif;text-align:center;padding:40px;background:#F0F2F5;">
+  <div style="max-width:440px;margin:auto;background:white;padding:32px;border-radius:20px;box-shadow:0 8px 30px rgba(0,0,0,0.08);border:1px solid #DFDEEB;">
+    <h2 style="color:#075E54;margin:0 0 8px;">Pair WhatsApp Cloud Bot</h2>
+    <p style="color:#667781;font-size:13px;margin:0 0 16px;">Open WhatsApp on your phone ➔ <b>Linked Devices</b> ➔ <b>Link a Device</b> and scan below:</p>
+    <img src="https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(latestQr)}" style="border-radius:12px;margin:10px auto;border:2px solid #DFDEEB;display:block;" alt="WhatsApp QR Code" />
+    <p style="color:#8696A0;font-size:11px;margin:16px 0 0;">Page refreshes automatically every 5 seconds until paired.</p>
+  </div>
+</body>
+</html>`);
+    } else {
+      res.end(`<!DOCTYPE html>
+<html>
+<head><title>MIRA WhatsApp Bot</title><meta name="viewport" content="width=device-width, initial-scale=1"><meta http-equiv="refresh" content="3"></head>
+<body style="font-family:system-ui,-apple-system,sans-serif;text-align:center;padding:40px;background:#F0F2F5;">
+  <div style="max-width:440px;margin:auto;background:white;padding:32px;border-radius:20px;box-shadow:0 8px 30px rgba(0,0,0,0.08);border:1px solid #DFDEEB;">
+    <h3 style="color:#111B21;">Starting WhatsApp Engine...</h3>
+    <p style="color:#667781;font-size:13px;">Generating QR code. Please wait 3 seconds...</p>
+  </div>
+</body>
+</html>`);
+    }
+    return;
+  }
 
   // Health / Status
   if (url.pathname === "/status" || url.pathname === "/health") {
