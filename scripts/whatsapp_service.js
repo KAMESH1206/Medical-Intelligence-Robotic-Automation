@@ -622,6 +622,7 @@ const server = http.createServer(async (req, res) => {
         status: isConnected ? "connected" : "disconnected",
         phone: userPhone,
         hasQr: !!latestQr,
+        version: "v2.1-no-self-reply",
       })
     );
     return;
