@@ -271,6 +271,10 @@ async function startWhatsApp() {
         messageText.includes("Next Available Open Slots") ||
         messageText.includes("APPOINTMENT RESCHEDULED") ||
         messageText.includes("APPOINTMENT CONFIRMATION") ||
+        messageText.includes("APPOINTMENT CANCELLED") ||
+        messageText.includes("MIRA HEALTHCARE") ||
+        messageText.includes("CONFIRMED") ||
+        messageText.includes("CANCELLED") ||
         messageText.includes("Need to reschedule?") ||
         messageText.includes("Patient Instructions") ||
         messageText.includes("SLOT ALREADY BOOKED") ||
@@ -538,7 +542,39 @@ Welcome to *${matchingApt.clinicName}* clinical messaging assistant.
 
 How can we assist you today?
 • Reply *RESCHEDULE* to view open slots and change your appointment.
+• Reply *CANCEL* to cancel your booking.
 • Reply *CONFIRM* to keep your current appointment.`;
+      }
+
+      // -------------------------------------------------------------
+      // SCENARIO 5: Patient requests CANCELLATION
+      // -------------------------------------------------------------
+      else if (
+        lowerText === "cancel" ||
+        lowerText.includes("cancel appointment") ||
+        lowerText.includes("cancel booking")
+      ) {
+        if (matchingApt && matchingApt.id && !matchingApt.id.startsWith("apt_auto_")) {
+          await updateAppointmentInCloud(matchingApt.id, {
+            preferredDate: matchingApt.preferredDate,
+            preferredTime: matchingApt.preferredTime,
+            status: "cancelled",
+            notes: `[Cancelled by patient via WhatsApp Bot on ${new Date().toLocaleDateString()}]`,
+          });
+        }
+
+        delete botStates[userKey];
+        fs.writeFileSync(BOT_STATE_FILE, JSON.stringify(botStates, null, 2), "utf-8");
+
+        replyText = `⚠️ *APPOINTMENT CANCELLED*
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Dear *${matchingApt.patientName}*,
+
+Your healthcare appointment at *${matchingApt.clinicName}* scheduled for *${matchingApt.preferredDate}* has been *CANCELLED* as requested.
+
+Our clinic dashboard and medical team have been notified.
+
+If you ever wish to book a new appointment, simply reply *RESCHEDULE* or *REBOOK* anytime.`;
       }
 
       if (replyText) {
