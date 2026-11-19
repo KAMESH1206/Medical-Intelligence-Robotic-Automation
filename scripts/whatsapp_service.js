@@ -260,29 +260,22 @@ async function startWhatsApp() {
 
       const lowerText = messageText.toLowerCase();
 
-      // 1. Avoid infinite loops on bot templates
+      // 1. NEVER process messages sent by the clinic WhatsApp account itself
+      if (msg.key.fromMe) {
+        continue;
+      }
+
+      // 2. Avoid infinite loops on bot templates and outbound notices
       if (
         messageText.includes("CLINICAL SCHEDULING") ||
         messageText.includes("Next Available Open Slots") ||
         messageText.includes("APPOINTMENT RESCHEDULED") ||
+        messageText.includes("APPOINTMENT CONFIRMATION") ||
+        messageText.includes("Need to reschedule?") ||
+        messageText.includes("Patient Instructions") ||
         messageText.includes("SLOT ALREADY BOOKED") ||
         messageText.includes("FULLY BOOKED")
       ) {
-        continue;
-      }
-
-      // 2. Filter self messages UNLESS explicitly testing bot commands (e.g. "reschedule", "1", "2", "confirm", "hi", "help")
-      const isTestCommand =
-        lowerText.includes("reschedule") ||
-        lowerText === "1" ||
-        lowerText === "2" ||
-        lowerText === "3" ||
-        lowerText.includes("confirm") ||
-        lowerText.includes("hi") ||
-        lowerText.includes("hello") ||
-        lowerText.includes("help");
-
-      if (msg.key.fromMe && !isTestCommand) {
         continue;
       }
 
@@ -356,9 +349,11 @@ async function startWhatsApp() {
       // -------------------------------------------------------------
       if (
         lowerText.includes("reschedule") ||
-        lowerText.includes("change") ||
+        lowerText.includes("change date") ||
+        lowerText.includes("change time") ||
+        lowerText.includes("change appointment") ||
         lowerText.includes("rebook") ||
-        (lowerText.includes("time") && !lowerText.includes("10:00") && !lowerText.includes("11:00"))
+        lowerText === "change"
       ) {
         // Generate real open slots AFTER the patient's existing preferredDate
         const slots = generateOpenSlots(matchingApt, appointments);
