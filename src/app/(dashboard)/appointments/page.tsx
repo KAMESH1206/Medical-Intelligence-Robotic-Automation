@@ -256,7 +256,7 @@ Your healthcare appointment has been *CONFIRMED*!
 • Bring your Photo ID and Medicare / Insurance Card.
 • Wear a mask if experiencing respiratory symptoms.
 
-Need to reschedule? Reply *RESCHEDULE* to this WhatsApp or contact reception.`;
+Need to change your booking? Reply *CHANGE* to this WhatsApp or contact reception.`;
 
     return {
       phone,
@@ -383,7 +383,7 @@ Your healthcare appointment at *${apt.clinicName}* has been *CANCELLED*.
 ⏰ *Cancelled Slot:* ${apt.preferredTime || "10:00 AM"}
 🔖 *Ref No:* ${refCode}
 
-If this cancellation was made in error or you would like to reschedule, please reply *REBOOK* to this WhatsApp or contact clinic reception.`;
+If this cancellation was made in error or you wish to book again, please contact clinic reception.`;
 
     return {
       phone,
