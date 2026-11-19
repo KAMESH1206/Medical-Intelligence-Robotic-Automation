@@ -21,31 +21,35 @@ export async function POST(request: Request) {
     const encodedText = encodeURIComponent(messageText || `Appointment confirmed for ${patientName} at ${clinicName} on ${date} at ${time}.`);
     const directUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodedText}`;
 
-    // 0. Primary: WhatsApp Engine (Cloud Tunnel or Local Port 8085)
-    const whatsappEngineUrl = process.env.WHATSAPP_SERVICE_URL || "http://localhost:8085";
-    try {
-      const nativeRes = await fetch(`${whatsappEngineUrl}/send`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          phone: cleanPhone,
-          text: messageText || `Appointment confirmed for ${patientName} at ${clinicName} on ${date} at ${time}.`,
-        }),
-      });
-      if (nativeRes.ok) {
-        const nativeData = await nativeRes.json();
-        console.log(`[NATIVE WHATSAPP SUCCESS] Dispatched from phone to +${cleanPhone}, ID: ${nativeData.messageId}`);
-        return NextResponse.json({
-          success: true,
-          provider: "Native WhatsApp Engine (Your Phone: +91 73971 86456)",
-          messageId: nativeData.messageId,
-          phone: cleanPhone,
-          message: `Automated WhatsApp delivered to +${cleanPhone} directly from your WhatsApp number!`,
-          directUrl,
+    // 0. Primary: WhatsApp Engine (Cloud Render URL or Local Port 8085)
+    const primaryEngineUrl = process.env.WHATSAPP_SERVICE_URL || "https://medical-intelligence-robotic-automation-c6mf.onrender.com";
+    const fallbackEngineUrl = "http://localhost:8085";
+
+    for (const whatsappEngineUrl of [primaryEngineUrl, fallbackEngineUrl]) {
+      try {
+        const nativeRes = await fetch(`${whatsappEngineUrl}/send`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            phone: cleanPhone,
+            text: messageText || `Appointment confirmed for ${patientName} at ${clinicName} on ${date} at ${time}.`,
+          }),
         });
+        if (nativeRes.ok) {
+          const nativeData = await nativeRes.json();
+          console.log(`[NATIVE WHATSAPP SUCCESS] Dispatched from phone to +${cleanPhone}, ID: ${nativeData.messageId}`);
+          return NextResponse.json({
+            success: true,
+            provider: "Native WhatsApp Engine (Your Phone: +91 73971 86456)",
+            messageId: nativeData.messageId,
+            phone: cleanPhone,
+            message: `Automated WhatsApp delivered to +${cleanPhone} directly from your WhatsApp number!`,
+            directUrl,
+          });
+        }
+      } catch {
+        // Continue to fallback engine
       }
-    } catch {
-      // Local engine not active, fallback to direct url
     }
 
     // 1. Fallback: Check for n8n Workflow Automation Webhook
